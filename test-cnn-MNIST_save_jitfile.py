@@ -9,11 +9,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import torch.optim as optim
-
+import cv2
+from torchvision.transforms.transforms import RandomInvert
 
 transform = transforms.Compose(
     [transforms.ToTensor(),
-     transforms.Normalize((0.5), (0.5))])
+     #transforms.Normalize((0.5), (0.5))
+     ])
 
 trainset = torchvision.datasets.MNIST(root='D:/Study/GitHub/TestPyTorch/data', train=True,
                                         download=True, transform=transform)
@@ -40,17 +42,17 @@ def imshow(img):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 8, 3)
+        self.conv1 = nn.Conv2d(1, 32, 3)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(8, 16, 3)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.conv2 = nn.Conv2d(32, 64, 3)
+        self.fc1 = nn.Linear(64 * 5 * 5, 512)
+        self.fc2 = nn.Linear(512, 128)
+        self.fc3 = nn.Linear(128, 10)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
+        x = x.view(-1, 64 * 5 * 5)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -61,20 +63,33 @@ if __name__ == '__main__':
     dataiter = iter(trainloader)
     images, labels = dataiter.next()
 
-    # show images
-    imshow(torchvision.utils.make_grid(images))
-
-    print(labels[0])
-    imshow(images[0])
-    print(images[0].shape)
-
 
     net = Net()
+
+    img = cv2.imread('D:/TestData/index1.png',cv2.IMREAD_GRAYSCALE)
+
+    print(img.shape)
+
+    img_tensor = torch.tensor(img)
+
+
+    print(img_tensor.shape)
+
+    
+    tensor_img = torch.tensor(img).view(1,1,28,28)
+
+    outputs = net(tensor_img)
+
+    print( outputs )
+    exit(0)
+
+
+
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.01)
 
-    for epoch in range(2):  # loop over the dataset multiple times
+    for epoch in range(5):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # get the inputs
@@ -83,6 +98,8 @@ if __name__ == '__main__':
             # zero the parameter gradients
             optimizer.zero_grad()
 
+            print( inputs.shape )
+            print( type(inputs) )
             # forward + backward + optimize
             outputs = net(inputs)
             loss = criterion(outputs, labels)
@@ -119,3 +136,11 @@ if __name__ == '__main__':
     r, predicted = torch.max(outputs.data, 1)
     print("r: ",r)
     print("predicted: ",predicted)
+
+    torch.save(net, "D:/TestData/mnist_fullmodel.pth")
+
+    model = net.eval()
+    net = torch.jit.trace(model, torch.rand(1,1,28,28))
+    net.save('D:/mnist_save_script_model.pt')
+    output=net(torch.ones(1,1,28,28))
+    print(output)
