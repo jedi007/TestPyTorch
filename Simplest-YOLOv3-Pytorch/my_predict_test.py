@@ -120,7 +120,8 @@ def main():
                 if(key & 0xFF == ord('q')):
                     cv2.destroyAllWindows()
                     break
-
+    #释放VideoCapture
+    cap.release()
     
     img = torch.ones((1, 3, img_size, img_size), device=device)
     model.eval()
