@@ -70,7 +70,6 @@ def main():
 
     model.eval()
 
-
     while cap.isOpened():
         #从摄像头读视频帧
         ret, frame = cap.read()
@@ -80,6 +79,7 @@ def main():
 
             with torch.no_grad():
                 img = img_utils.letterbox(img_o, new_shape=input_size, auto=True, color=(0, 0, 0))[0]
+
                 # Convert
                 img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
                 img = np.ascontiguousarray(img)
