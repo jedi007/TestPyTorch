@@ -105,7 +105,7 @@ class YOLOP0(nn.Module):
         if self.training:
             return x
         else:
-            device="cpu"
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
@@ -162,7 +162,7 @@ class YOLOP1(nn.Module):
         if self.training:
             return x
         else:
-            device="cpu"
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
@@ -219,7 +219,7 @@ class YOLOP2(nn.Module):
         if self.training:
             return x
         else:
-            device="cpu"
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
@@ -436,7 +436,7 @@ def model_info(model, verbose=False):
 
 if __name__ == '__main__':
     model = YOLOv3Model()
-    device = torch.device("cpu")
+    device = device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model.loadPublicPt("D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/weights/yolov3spp-voc-512.pt",device)
 

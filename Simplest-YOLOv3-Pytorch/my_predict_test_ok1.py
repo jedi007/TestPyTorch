@@ -122,16 +122,6 @@ def main():
                   break
     #释放VideoCapture
     cap.release()   
-          
-    img = torch.ones((1, 3, img_size, img_size), device=device)
-    model.eval()
-    net = torch.jit.trace(model, img)
-    net.save('D:/TestData/my_yolov3_jit.pt')
-    pred=net(img)
     
-    print( "pred.shape: ", pred.shape )
-    print( "pred[0][0]: ", pred[0][0] )
-    print( "pred[0][768]: ", pred[0][768] )
-    print( "pred[0][3840]: ", pred[0][3840] )
 if __name__ == "__main__":
     main()

@@ -36,8 +36,11 @@ class Net(nn.Module):
 
 if __name__ == '__main__':
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("device: ",device)
+
     model = torch.load("D:/TestData/mnist_fullmodel.pth")
-    model.cpu().eval()
+    model.cuda().eval()
 
     print(model)
 
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     print(img_tensor.shape)
 
     
-    tensor_img = torch.tensor(img).view(1,1,28,28).float()
+    tensor_img = torch.tensor(img).view(1,1,28,28).float().cuda()
 
     print(tensor_img.shape)
     print( type(tensor_img) )

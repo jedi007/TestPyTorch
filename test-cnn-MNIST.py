@@ -58,18 +58,26 @@ class Net(nn.Module):
 
 
 if __name__ == '__main__':
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("device: ",device)
+
     dataiter = iter(trainloader)
     images, labels = dataiter.next()
 
-    # show images
-    imshow(torchvision.utils.make_grid(images))
+    images, labels = images.to(device), labels.to(device)
+    print(images)
 
-    print(labels[0])
-    imshow(images[0])
-    print(images[0].shape)
+    # # show images
+    # imshow(torchvision.utils.make_grid(images))
+
+    # print(labels[0])
+    # imshow(images[0])
+    # print(images[0].shape)
 
 
     net = Net()
+    net.cuda()
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.01)
@@ -79,6 +87,7 @@ if __name__ == '__main__':
         for i, data in enumerate(trainloader, 0):
             # get the inputs
             inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
 
             # zero the parameter gradients
             optimizer.zero_grad()

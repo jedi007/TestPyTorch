@@ -23,18 +23,25 @@ class TwoLayerNet(torch.nn.Module):
 N, D_in, H, D_out = 64, 1000, 100, 10
 
 # 产生输入和输出的随机张量
-x = torch.randn(N, D_in)
-y = torch.randn(N, D_out)
+x = torch.randn(N, D_in).cuda()
+y = torch.randn(N, D_out).cuda()
+
+print(x)
+
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("device: ",device)
 
 # 通过实例化上面定义的类来构建我们的模型。
 model = TwoLayerNet(D_in, H, D_out)
+model.to(device)
 
 # 构造损失函数和优化器。
 # SGD构造函数中对model.parameters()的调用，
 # 将包含模型的一部分，即两个nn.Linear模块的可学习参数。
 loss_fn = torch.nn.MSELoss(reduction='sum')
 optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
-for t in range(500):
+for t in range(1):
     # 前向传播：通过向模型传递x计算预测值y
     y_pred = model(x)
 
