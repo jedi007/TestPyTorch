@@ -6,7 +6,7 @@ def crypt(addtxt,basedir):
             name_o = os.path.join(root,file).replace("\\","/")
             if addtxt:
                 os.rename(name_o,name_o +".txt")
-            else:
+            elif name_o.endswith(".txt"):
                 os.rename(name_o,name_o[0:-4])
 
 if __name__ == '__main__':
