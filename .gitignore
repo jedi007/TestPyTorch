@@ -3,3 +3,4 @@ hymenoptera_data
 hymenoptera_data.zip
 savepath/*
 logs
+*.pyc
