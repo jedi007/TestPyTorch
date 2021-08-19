@@ -75,7 +75,7 @@ def main():
     img = torch.ones((1, 3, img_size, img_size), device=device)
 
     net = torch.jit.trace(model, img)
-    net.save('D:/TestData/my_yolov3_jit_cuda.pt')
+    net.save('D:/TestData/my_yolov3_jit_cuda2.pt')
     # pred=net(img)
     
     # print( "pred.shape: ", pred.shape )
