@@ -68,7 +68,7 @@ class YOLOP0(nn.Module):
         self.stride = 32
 
         #[ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
-        self.anchors = torch.tensor([ [116,90],  [156,198],  [373,326] ])
+        self.anchors = torch.tensor([ [116,90],  [156,198],  [373,326] ],device=torch.device("cuda:0"))
         # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
 
@@ -105,16 +105,15 @@ class YOLOP0(nn.Module):
         if self.training:
             return x
         else:
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda:0")
 
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
             # batch_size, na, grid_h, grid_w, wh
             self.grid = torch.stack((xv, yv), 2).view(batchsize, 1, ny, nx, 2).float()
 
-            if self.anchor_vec.device != device:
-                self.anchor_vec = self.anchor_vec.to(device)
-                self.anchor_wh = self.anchor_wh.to(device)
+            self.anchor_vec = self.anchor_vec.to(device)
+            self.anchor_wh = self.anchor_wh.to(device)
 
             io = x.clone()  # inference output
             io[..., :2] = torch.sigmoid(io[..., :2]) + self.grid  # xy 计算在feature map上的xy坐标
@@ -131,7 +130,7 @@ class YOLOP1(nn.Module):
         self.stride = 16
 
         #[ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
-        self.anchors = torch.tensor([ [30,61],  [62,45],  [59,119] ])
+        self.anchors = torch.tensor([ [30,61],  [62,45],  [59,119] ],device=torch.device("cuda:0"))
         # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
 
@@ -162,16 +161,15 @@ class YOLOP1(nn.Module):
         if self.training:
             return x
         else:
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda:0")
             
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
             # batch_size, na, grid_h, grid_w, wh
             self.grid = torch.stack((xv, yv), 2).view(batchsize, 1, ny, nx, 2).float()
 
-            if self.anchor_vec.device != device:
-                self.anchor_vec = self.anchor_vec.to(device)
-                self.anchor_wh = self.anchor_wh.to(device)
+            self.anchor_vec = self.anchor_vec.to(device)
+            self.anchor_wh = self.anchor_wh.to(device)
 
             io = x.clone()  # inference output
             io[..., :2] = torch.sigmoid(io[..., :2]) + self.grid  # xy 计算在feature map上的xy坐标
@@ -188,7 +186,7 @@ class YOLOP2(nn.Module):
         self.stride = 8
 
         #[ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
-        self.anchors = torch.tensor([ [10,13],  [16,30],  [33,23] ])
+        self.anchors = torch.tensor([ [10,13],  [16,30],  [33,23] ],device=torch.device("cuda:0"))
         # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
 
@@ -219,16 +217,15 @@ class YOLOP2(nn.Module):
         if self.training:
             return x
         else:
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda:0")
             
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
             # batch_size, na, grid_h, grid_w, wh
             self.grid = torch.stack((xv, yv), 2).view(batchsize, 1, ny, nx, 2).float()
 
-            if self.anchor_vec.device != device:
-                self.anchor_vec = self.anchor_vec.to(device)
-                self.anchor_wh = self.anchor_wh.to(device)
+            self.anchor_vec = self.anchor_vec.to(device)
+            self.anchor_wh = self.anchor_wh.to(device)
 
             io = x.clone()  # inference output
             io[..., :2] = torch.sigmoid(io[..., :2]) + self.grid  # xy 计算在feature map上的xy坐标
@@ -415,6 +412,8 @@ class YOLOv3Model(nn.Module):
         load_dic = torch.load(weightsfile, map_location=device)
         newdic = dict( zip(local_dic.keys(),load_dic["model"].values()) )
 
+        #print("newdic: ",newdic)
+
         self.load_state_dict( newdic )
         print("load model successed")
     
@@ -436,7 +435,7 @@ def model_info(model, verbose=False):
 
 if __name__ == '__main__':
     model = YOLOv3Model()
-    device = device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0")
 
     model.loadPublicPt("D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/weights/yolov3spp-voc-512.pt",device)
 

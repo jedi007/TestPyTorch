@@ -66,7 +66,6 @@ if __name__ == '__main__':
     images, labels = dataiter.next()
 
     images, labels = images.to(device), labels.to(device)
-    print(images)
 
     # # show images
     # imshow(torchvision.utils.make_grid(images))
