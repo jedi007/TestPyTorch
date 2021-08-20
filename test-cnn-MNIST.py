@@ -111,6 +111,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         for data in testloader:
             images, labels = data
+            images, labels = images.to(device), labels.to(device)
             outputs = net(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -120,9 +121,10 @@ if __name__ == '__main__':
 
 
     images, labels = dataiter.next()
+    images, labels = images.to(device), labels.to(device)
 
     print(labels[0])
-    imshow(images[0])
+    imshow(images[0].cpu())
     outputs = net(images[0].view(1,1,28,28))
     r, predicted = torch.max(outputs.data, 1)
     print("r: ",r)
