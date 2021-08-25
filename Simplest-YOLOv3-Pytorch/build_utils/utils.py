@@ -9,6 +9,7 @@ import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.types import Number
 import torchvision
 from tqdm import tqdm
 
@@ -205,22 +206,12 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
     return 1.0 - 0.5 * eps, 0.5 * eps
 
 
-def compute_loss(p, targets, model):  # predictions, targets, model
-    print("in compute_loss p: ",len(p))
-    print("in compute_loss p[0]: ",p[0].shape)
-    print("in compute_loss p[1]: ",p[1].shape)
-    print("in compute_loss p[2]: ",p[2].shape)
-    print("in compute_loss targets: ",targets)
-
-    device = p[0].device
+def compute_loss(pred, targets, model):  # predictions, targets, model
+    device = pred[0].device
     lcls = torch.zeros(1, device=device)  # Tensor(0)
     lbox = torch.zeros(1, device=device)  # Tensor(0)
     lobj = torch.zeros(1, device=device)  # Tensor(0)
-    tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
-    print("in compute_loss tcls len shape: ",len(tcls),tcls[0].shape)
-    print("in compute_loss tbox len shape: ",len(tbox),tbox[0].shape)
-    print("in compute_loss indices len shape: ",len(indices),indices[0])
-    print("in compute_loss anchors len shape: ",len(anchors),anchors[0])
+    tcls, tbox, indices, anchors = build_targets(pred, targets)  # targets
 
 
     h = model.hyp  # hyperparameters
@@ -240,53 +231,36 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     # per output
     nt = 0  # targets
-    for i, pi in enumerate(p):  # layer index, layer predictions
-        print("pi.shape: ",pi.shape)
+    for i, pi in enumerate(pred):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
-        print("b: ",b)
-        print("a: ",a)
-        print("gj: ",gj)
-        print("gi: ",gi)
 
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
-        #print("tobj: ",tobj)
-        print("tobj.shape: ",tobj.shape)
 
         nb = b.shape[0]  # number of targets
         if nb:
             # 对应匹配到正样本的预测信息
             ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
-            print("type(ps): ",type(ps))
-            print("ps.shape: ",ps.shape)
 
             # GIoU
             pxy = ps[:, :2].sigmoid()
-            print("pxy: ",pxy)
 
             pwh = ps[:, 2:4].exp().clamp(max=1E3) * anchors[i]
-            print("pwh: ",pwh)
 
             pbox = torch.cat((pxy, pwh), 1)  # predicted box
-            print("pbox: ",pbox)
 
             giou = bbox_iou(pbox.t(), tbox[i], x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
-            print("giou: ",giou)
 
             lbox += (1.0 - giou).mean()  # giou loss
 
-            print("model.gr: ",model.gr)
             # Obj
             tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
-            print("tobj[b, a, gj, gi]: ",tobj[b, a, gj, gi])
 
             # Class
-            if model.nc > 1:  # cls loss (only if multiple classes)
+            class_number = 20
+            if class_number > 1:  # cls loss (only if multiple classes)
                 t = torch.full_like(ps[:, 5:], cn, device=device)  # targets
-                print("t: ",t)
-                print("t.shape: ",t.shape)
 
                 t[range(nb), tcls[i]] = cp
-                print("t: ",t)
                 lcls += BCEcls(ps[:, 5:], t)  # BCE
 
             # Append targets to text file
@@ -301,26 +275,68 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     lcls *= h['cls']
 
 
-    print("lobj: ",lobj)
-    exit(0)
 
     # loss = lbox + lobj + lcls
     return {"box_loss": lbox,
             "obj_loss": lobj,
             "class_loss": lcls}
 
+def build_targets(pred, targets):
+    # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
+    target_number = targets.shape[0]
+    tcls, tbox, indices, anch = [], [], [], []
+    gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
 
-def build_targets(p, targets, model):
+    anchors_list = [ [[10,13],  [16,30],  [33,23]],  [[30,61],  [62,45],  [59,119]],  [[116,90],  [156,198],  [373,326]] ]
+    for index in range( 3 ):  
+        anchors = torch.tensor( anchors_list[2-index] )
+
+        gain[2:] = torch.tensor(pred[index].shape)[[3, 2, 3, 2]]  # xyxy gain
+        
+        anchors_number = anchors.shape[0]  
+        # [3] -> [3, 1] -> [3, nt]
+        at = torch.arange(anchors_number).view(anchors_number, 1).repeat(1, target_number)  # anchor tensor, same as .repeat_interleave(nt)
+
+        a, t, offsets = [], targets * gain, 0
+        if target_number:  # 如果存在target的话
+            # iou_t = 0.20
+            # j: [3, nt]
+            j = wh_iou(anchors, t[:, 4:6]) > 0.20 #set iou_t = 0.20  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
+            # t.repeat(anchors_number, 1, 1): [nt, 6] -> [3, nt, 6]
+            # 获取iou大于阈值的anchor与target对应信息
+            a, t = at[j], t.repeat(anchors_number, 1, 1)[j]  # filter
+
+        # Define
+        # long等于to(torch.int64), 数值向下取整
+        b, c = t[:, :2].long().T  # image, class
+        gxy = t[:, 2:4]  # grid xy
+        gwh = t[:, 4:6]  # grid wh
+        gij = (gxy - offsets).long()  # 匹配targets所在的grid cell左上角坐标
+        gi, gj = gij.T  # grid xy indices
+
+        # Append
+        indices.append((b, a, gj, gi))  # image, anchor, grid indices(x, y)
+        tbox.append(torch.cat((gxy - gij, gwh), 1))  # gt box相对anchor的x,y偏移量以及w,h
+        anch.append(anchors[a])  # anchors
+        tcls.append(c)  # class
+        class_number = 20
+        if c.shape[0] and c.max() > class_number:  # if any targets
+            # 目标的标签数值不能大于给定的目标类别数
+            print("class number is wrong")
+            exit(0)
+            
+    return tcls, tbox, indices, anch
+
+def build_targets_000(pred, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
     nt = targets.shape[0]
     tcls, tbox, indices, anch = [], [], [], []
     gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
 
-    multi_gpu = type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
     for i, j in enumerate(model.yolo_layers):  # [89, 101, 113]
         # 获取该yolo predictor对应的anchors
-        anchors = model.module.module_list[j].anchor_vec if multi_gpu else model.module_list[j].anchor_vec
-        gain[2:] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
+        anchors = model.module_list[j].anchor_vec
+        gain[2:] = torch.tensor(pred[i].shape)[[3, 2, 3, 2]]  # xyxy gain
         na = anchors.shape[0]  # number of anchors
         # [3] -> [3, 1] -> [3, nt]
         at = torch.arange(na).view(na, 1).repeat(1, nt)  # anchor tensor, same as .repeat_interleave(nt)

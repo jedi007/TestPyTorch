@@ -344,6 +344,9 @@ class YOLOv3Model(nn.Module):
         
         YOLOP2_branch = x
 
+        if self.training:
+            return [YOLOP0_branch,YOLOP1_branch,YOLOP2_branch]
+            
         return torch.cat( (YOLOP0_branch,YOLOP1_branch,YOLOP2_branch),1 )
 
     def info(self, verbose=True):
