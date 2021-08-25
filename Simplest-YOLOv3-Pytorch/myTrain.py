@@ -35,23 +35,23 @@ def train(hyp):
     test_path = "D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_val_data.txt"
 
     model = YOLOv3Model().to(device)
-    if weights.endswith(".pt") or weights.endswith(".pth"):
-        model.loadPublicPt(weights,device)
+    # if weights.endswith(".pt") or weights.endswith(".pth"):
+    #     model.loadPublicPt(weights,device)
 
     # optimizer
     parameters_grad = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(parameters_grad, lr=hyp["lr0"], momentum=hyp["momentum"],
                           weight_decay=hyp["weight_decay"], nesterov=True)
 
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=30)
+    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=30)
 
     start_epoch = 0
     best_map = 0.0
 
-    train_dataset = ImagesAndLabelsSet(train_path, 512, 4 )
+    train_dataset = ImagesAndLabelsSet(train_path, 512, batch_size = opt.batch_size )
 
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
-                                                   batch_size=4,
+                                                   batch_size = opt.batch_size,
                                                    num_workers=1,
                                                    shuffle= False,
                                                    pin_memory=True,
@@ -78,7 +78,7 @@ def train(hyp):
 
         
         # update scheduler
-        scheduler.step()
+        # scheduler.step()
 
 
 
@@ -91,6 +91,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,img_size,print_
 
     for i, (imgs, targets, paths, _, _) in enumerate( data_loader ):
         batch_size = opt.batch_size
+        print(" imgs.shape: ",imgs.shape)
         # ni 统计从epoch0开始的所有batch数
         #ni = i + nb * epoch  # number integrated batches (since train start)
         imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
@@ -110,6 +111,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,img_size,print_
         mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
 
         if not torch.isfinite(losses):
+            print("in imgs[0]: ",imgs[0])
+            print("pred: ",pred[0][0][0])
+
             print('WARNING: non-finite loss, ending training ', loss_dict)
             print("training image path: {}".format(",".join(paths)))
             sys.exit(1)
@@ -119,15 +123,17 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,img_size,print_
         losses.backward()
         optimizer.step()
 
+        optimizer.zero_grad()
+
         now_lr = optimizer.param_groups[0]["lr"]
 
-        print("epoch: {} step: {}  mloss: {}".format(epoch, i, mloss))
+        print("epoch: {} step: {}  now_lr: {} loss_items: {}".format(epoch, i, now_lr, loss_items))
 
     return mloss, now_lr
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch-size', type=int, default=2)
 
     parser.add_argument('--cfg', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/my_yolov3.cfg', help="*.cfg path")

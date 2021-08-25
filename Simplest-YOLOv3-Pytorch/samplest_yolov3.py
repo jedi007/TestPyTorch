@@ -81,7 +81,7 @@ class YOLOBase(nn.Module):
         if self.training:
             return x
         else:
-            device = torch.device("cuda:0")
+            device = x.device
 
             yv, xv = torch.meshgrid([torch.arange(ny, device=device),
                                      torch.arange(nx, device=device)])
@@ -105,7 +105,7 @@ class YOLOP0(YOLOBase):
         self.stride = 32
 
         #[ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
-        self.anchors = torch.tensor([ [116,90],  [156,198],  [373,326] ],device=torch.device("cuda:0"))
+        self.anchors = torch.tensor([ [116,90],  [156,198],  [373,326] ])
         # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
 
@@ -133,7 +133,7 @@ class YOLOP1(YOLOBase):
         self.stride = 16
 
         #[ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
-        self.anchors = torch.tensor([ [30,61],  [62,45],  [59,119] ],device=torch.device("cuda:0"))
+        self.anchors = torch.tensor([ [30,61],  [62,45],  [59,119] ])
         # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
 
@@ -161,7 +161,7 @@ class YOLOP2(YOLOBase):
         self.stride = 8
 
         #[ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
-        self.anchors = torch.tensor([ [10,13],  [16,30],  [33,23] ],device=torch.device("cuda:0"))
+        self.anchors = torch.tensor([ [10,13],  [16,30],  [33,23] ])
         # 将anchors大小缩放到grid尺度
         self.anchor_vec = self.anchors / self.stride
 

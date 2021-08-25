@@ -324,7 +324,7 @@ if __name__ == '__main__':
     train_path = "D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_train_data.txt"
 
 
-    train_dataset = ImagesAndLabelsSet(train_path, 512, 4 )
+    train_dataset = ImagesAndLabelsSet(train_path, 512, batch_size=4 )
 
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
                                                    batch_size=4,
