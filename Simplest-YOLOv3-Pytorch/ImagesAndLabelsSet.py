@@ -51,7 +51,6 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         except Exception as e:
             raise FileNotFoundError("Error loading data from {}. {}".format(path, e))
 
-        print( "len(self.img_files): ",len(self.img_files) )
         # 如果图片列表中没有图片，则报错
         img_files_number = len(self.img_files)
         assert img_files_number > 0, "No images found in %s." % (path)
@@ -103,7 +102,6 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         mission_number, found_number, empty_number, duplicate_number = 0, 0, 0, 0
 
         np_labels_path = str(Path(self.label_files[0]).parent) + ".npy"
-        print("np_labels_path: ",np_labels_path)
 
         if os.path.isfile(np_labels_path):
             x = np.load(np_labels_path, allow_pickle=True)
@@ -111,8 +109,6 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
                 # 如果载入的缓存标签个数与当前计算的图像数目相同则认为是同一数据集，直接读缓存
                 self.labels = x
                 labels_loaded = True
-        
-        print("self.label_files[0]: ",self.label_files[0])
 
         # 处理进度条只在第一个进程中显示
         if rank in [-1, 0]:
