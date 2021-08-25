@@ -213,7 +213,6 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
     lobj = torch.zeros(1, device=device)  # Tensor(0)
     tcls, tbox, indices, anchors = build_targets(pred, targets)  # targets
 
-
     h = model.hyp  # hyperparameters
     red = 'mean'  # Loss reduction (sum or mean)
 
@@ -326,52 +325,6 @@ def build_targets(pred, targets):
             exit(0)
             
     return tcls, tbox, indices, anch
-
-def build_targets_000(pred, targets, model):
-    # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
-    nt = targets.shape[0]
-    tcls, tbox, indices, anch = [], [], [], []
-    gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
-
-    for i, j in enumerate(model.yolo_layers):  # [89, 101, 113]
-        # 获取该yolo predictor对应的anchors
-        anchors = model.module_list[j].anchor_vec
-        gain[2:] = torch.tensor(pred[i].shape)[[3, 2, 3, 2]]  # xyxy gain
-        na = anchors.shape[0]  # number of anchors
-        # [3] -> [3, 1] -> [3, nt]
-        at = torch.arange(na).view(na, 1).repeat(1, nt)  # anchor tensor, same as .repeat_interleave(nt)
-
-        # Match targets to anchors
-        a, t, offsets = [], targets * gain, 0
-        if nt:  # 如果存在target的话
-            # iou_t = 0.20
-            # j: [3, nt]
-            j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
-            # t.repeat(na, 1, 1): [nt, 6] -> [3, nt, 6]
-            # 获取iou大于阈值的anchor与target对应信息
-            a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
-
-        # Define
-        # long等于to(torch.int64), 数值向下取整
-        b, c = t[:, :2].long().T  # image, class
-        gxy = t[:, 2:4]  # grid xy
-        gwh = t[:, 4:6]  # grid wh
-        gij = (gxy - offsets).long()  # 匹配targets所在的grid cell左上角坐标
-        gi, gj = gij.T  # grid xy indices
-
-        # Append
-        indices.append((b, a, gj, gi))  # image, anchor, grid indices(x, y)
-        tbox.append(torch.cat((gxy - gij, gwh), 1))  # gt box相对anchor的x,y偏移量以及w,h
-        anch.append(anchors[a])  # anchors
-        tcls.append(c)  # class
-        if c.shape[0]:  # if any targets
-            # 目标的标签数值不能大于给定的目标类别数
-            assert c.max() < model.nc, 'Model accepts %g classes labeled from 0-%g, however you labelled a class %g. ' \
-                                       'See https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data' % (
-                                           model.nc, model.nc - 1, c.max())
-
-    return tcls, tbox, indices, anch
-
 
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6,
                         multi_label=True, classes=None, agnostic=False, max_num=100):
