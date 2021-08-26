@@ -38,15 +38,15 @@ def main():
     model.eval()
 
     #test====================================================================================================save
-    img_size = 512
-    input_size = (img_size, img_size)
+    # img_size = 512
+    # input_size = (img_size, img_size)
 
-    img = torch.ones((1, 3, img_size, img_size), device=device)
+    # img = torch.ones((1, 3, img_size, img_size), device=device)
 
-    model.eval()
-    net = torch.jit.trace(model, img)
-    net.save('D:/TestData/my_yolov3_jit.pt')
-    exit(0)
+    # model.eval()
+    # net = torch.jit.trace(model, img)
+    # net.save('D:/TestData/my_yolov3_jit.pt')
+    # exit(0)
     #test====================================================================================================saveover
 
     #test====================================================================================================
@@ -72,7 +72,7 @@ def main():
     # print("pred[0][99]: ",pred[0][99])
 
 
-    #pred = utils.non_max_suppression(pred, conf_thres=0.1, iou_thres=0.6, multi_label=True)[0]
+    pred = utils.non_max_suppression(pred, conf_thres=0.2, iou_thres=0.4, multi_label=True)[0]
 
 
     pred[:, :4] = utils.scale_coords(img.shape[2:], pred[:, :4], img_o.shape).round()
