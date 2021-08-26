@@ -43,7 +43,7 @@ def train(hyp):
     optimizer = optim.SGD(parameters_grad, lr=hyp["lr0"], momentum=hyp["momentum"],
                           weight_decay=hyp["weight_decay"], nesterov=True)
 
-    #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=30)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=30)
 
     start_epoch = 0
     best_map = 0.0
@@ -57,15 +57,6 @@ def train(hyp):
                                                    pin_memory=True,
                                                    collate_fn=train_dataset.collate_fn)
 
-    # val_dataset = ImagesAndLabelsSet(train_path, 512, 4 )
-
-    # val_dataloader = torch.utils.data.DataLoader(val_dataset,
-    #                                                batch_size=4,
-    #                                                num_workers=1,
-    #                                                shuffle= False,
-    #                                                pin_memory=True,
-    #                                                collate_fn=train_dataset.collate_fn)
-
     # Model parameters
     model.class_number = 20  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
@@ -78,7 +69,16 @@ def train(hyp):
 
         
         # update scheduler
-        # scheduler.step()
+        scheduler.step()
+    
+        if True:
+            if opt.savebest is False:
+                save_data = {
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'epoch': epoch,
+                    'best_map': best_map}
+                torch.save(save_data, "D:/TestData/yolov3spp-{}-{}.pt".format(epoch,mloss[3]))
 
 
 
@@ -90,8 +90,6 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,img_size,print_
     mloss = torch.zeros(4).to(device)  # mean losses
 
     for i, (imgs, targets, paths, _, _) in enumerate( data_loader ):
-        batch_size = opt.batch_size
-        print(" imgs.shape: ",imgs.shape)
         # ni 统计从epoch0开始的所有batch数
         #ni = i + nb * epoch  # number integrated batches (since train start)
         imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
@@ -130,6 +128,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,img_size,print_
         print("epoch: {} step: {}  now_lr: {} loss_items: {}".format(epoch, i, now_lr, loss_items))
 
     return mloss, now_lr
+
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
