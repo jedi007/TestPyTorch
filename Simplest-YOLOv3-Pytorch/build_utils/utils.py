@@ -213,6 +213,9 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
     lobj = torch.zeros(1, device=device)  # Tensor(0)
     tcls, tbox, indices, anchors = build_targets(pred, targets)  # targets
 
+    print("tbox: ",tbox[0])
+    print("tbox.shape: ",tbox[0].shape)
+
     h = model.hyp  # hyperparameters
     red = 'mean'  # Loss reduction (sum or mean)
 

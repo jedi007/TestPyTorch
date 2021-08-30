@@ -154,7 +154,7 @@ class YOLOv3Model_Gray(nn.Module):
 
         modules = nn.Sequential()
         modules.add_module("Conv2d", nn.Conv2d(in_channels=64,
-                                                out_channels=5,
+                                                out_channels=45,
                                                 kernel_size=1,
                                                 stride=1,
                                                 padding=1 // 2 ,
@@ -181,7 +181,11 @@ class YOLOv3Model_Gray(nn.Module):
             x = self.module_list[i](x)
 
         print("out x.shape: ",x.shape)
-        return x
+
+        batchsize = x.shape[0]
+        gradsize = x.shape[2]
+        out = x.view(batchsize, gradsize, gradsize, 9, 5)
+        return out
 
     def info(self, verbose=True):
         """

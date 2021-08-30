@@ -208,30 +208,37 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
 
 def compute_loss(pred, targets, model):  # predictions, targets, model
     device = pred[0].device
-    lcls = torch.zeros(1, device=device)  # Tensor(0)
     lbox = torch.zeros(1, device=device)  # Tensor(0)
     lobj = torch.zeros(1, device=device)  # Tensor(0)
-    tcls, tbox, indices, anchors = build_targets(pred, targets)  # targets
+    targets, tobj = build_targets(pred, targets)  # targets
 
-    h = model.hyp  # hyperparameters
+
+
     red = 'mean'  # Loss reduction (sum or mean)
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device), reduction=red)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device), reduction=red)
-
-    # class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-    cp, cn = smooth_BCE(eps=0.0)
+    #obj_pw: 1.0  # obj BCELoss positive_weight
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0], device=device), reduction=red)
 
     # focal loss
-    g = h['fl_gamma']  # focal loss gamma
-    if g > 0:
-        BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
+    # g = h['fl_gamma']  # focal loss gamma
+    # if g > 0:
+    #     BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
     # per output
     nt = 0  # targets
+    #pred.shape:  torch.Size([1, 32, 32, 9, 5])
+    pobj = pred[:,:,:,:,[0]].view( pred.shape[0], -1)
+    print("pobj.shape: ",pobj.shape)
+    # for row in range(pred.shape[0]):
+    #     for col in range(pred.shape[1]):
+
+
     for i, pi in enumerate(pred):  # layer index, layer predictions
-        b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
+        print("i",i)
+        #print("pi",pi)
+
+        b, a, gj, gi = 0,0,0,0
 
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
 
@@ -254,77 +261,60 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
             # Obj
             tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
 
-            # Class
-            class_number = 20
-            if class_number > 1:  # cls loss (only if multiple classes)
-                t = torch.full_like(ps[:, 5:], cn, device=device)  # targets
-
-                t[range(nb), tcls[i]] = cp
-                lcls += BCEcls(ps[:, 5:], t)  # BCE
-
-            # Append targets to text file
-            # with open('targets.txt', 'a') as file:
-            #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
-
         lobj += BCEobj(pi[..., 4], tobj)  # obj loss
 
     # 乘上每种损失的对应权重
     lbox *= h['giou']
     lobj *= h['obj']
-    lcls *= h['cls']
 
 
 
     # loss = lbox + lobj + lcls
     return {"box_loss": lbox,
-            "obj_loss": lobj,
-            "class_loss": lcls}
+            "obj_loss": lobj}
 
 def build_targets(pred, targets):
-    # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
-    target_number = targets.shape[0]
-    tcls, tbox, indices, anch = [], [], [], []
-    gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
+    #anchors_list = [ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
+    anchors_list = [ [10,13,130],  [16,30,480],  [33,23,759],  [30,61,1830],  [62,45,2790],  [59,119,7021],  [116,90,10440],  [156,198,30888],  [373,326,121598] ]
 
-    anchors_list = [ [[10,13],  [16,30],  [33,23]],  [[30,61],  [62,45],  [59,119]],  [[116,90],  [156,198],  [373,326]] ]
-    for index in range( 3 ):  
-        anchors = torch.tensor( anchors_list[2-index] )
+    #grid_size = torch.tensor(pred.shape)[[1, 2]]
+    grid_size = pred.shape[1]
 
-        gain[2:] = torch.tensor(pred[index].shape)[[3, 2, 3, 2]]  # xyxy gain
+    targets[:,2:4] /= (1/grid_size)
+    targets[:,4:] *= 512
+
+    tobj = torch.zeros( (targets.shape[0],1) )
+
+    for index in  range( len(targets) ):
+        target_size = targets[index,4:]
+        max_like = 0
+        max_like_index = -1
+        for anchor_index in range( len(anchors_list) ):
+            area1 = min( target_size[0],anchors_list[anchor_index][0] ) * min( target_size[1],anchors_list[anchor_index][1] )
+            area2 = anchors_list[anchor_index][2] + target_size[0]*target_size[1]
+            like_d = area1/(area2-area1)
+            if like_d > max_like:
+                max_like = like_d
+                max_like_index = anchor_index
+        tobj[index][0] = max_like_index   
         
-        anchors_number = anchors.shape[0]  
-        # [3] -> [3, 1] -> [3, nt]
-        at = torch.arange(anchors_number).view(anchors_number, 1).repeat(1, target_number)  # anchor tensor, same as .repeat_interleave(nt)
+    grid = torch.floor( targets[:,[0,2,3]] )
+    print("grid: ",grid)
+    
+    tobj = torch.cat( (grid,tobj ),1 ).int()
+    print("targets: ",targets)
 
-        a, t, offsets = [], targets * gain, 0
-        if target_number:  # 如果存在target的话
-            # iou_t = 0.20
-            # j: [3, nt]
-            j = wh_iou(anchors, t[:, 4:6]) > 0.20 #set iou_t = 0.20  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
-            # t.repeat(anchors_number, 1, 1): [nt, 6] -> [3, nt, 6]
-            # 获取iou大于阈值的anchor与target对应信息
-            a, t = at[j], t.repeat(anchors_number, 1, 1)[j]  # filter
+    print("tobj: ",tobj)
 
-        # Define
-        # long等于to(torch.int64), 数值向下取整
-        b, c = t[:, :2].long().T  # image, class
-        gxy = t[:, 2:4]  # grid xy
-        gwh = t[:, 4:6]  # grid wh
-        gij = (gxy - offsets).long()  # 匹配targets所在的grid cell左上角坐标
-        gi, gj = gij.T  # grid xy indices
-
-        # Append
-        indices.append((b, a, gj, gi))  # image, anchor, grid indices(x, y)
-        tbox.append(torch.cat((gxy - gij, gwh), 1))  # gt box相对anchor的x,y偏移量以及w,h
-        anch.append(anchors[a])  # anchors
-        tcls.append(c)  # class
-        class_number = 20
-        if c.shape[0] and c.max() > class_number:  # if any targets
-            # 目标的标签数值不能大于给定的目标类别数
-            print("class number is wrong")
-            exit(0)
-            
-    return tcls, tbox, indices, anch
+    #pred.shape:  torch.Size([1, 32, 32, 9, 5])
+    tobj2 = torch.zeros( (pred.shape[0],pred.shape[1],pred.shape[2],pred.shape[3],1) )
+    print("tobj2.shape: ",tobj2.shape)
+    for i in range( tobj.shape[0] ):
+        print("tobj[i]: ",tobj[i])
+        tobj2[ tobj[i][0] ][ tobj[i][1] ][ tobj[i][2] ][ tobj[i][3] ][0] = 1.
+        
+    print("tobj2[0][16][18]: ",tobj2[0][16][18])
+    return targets,tobj2
 
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6,
                         multi_label=True, classes=None, agnostic=False, max_num=100):
