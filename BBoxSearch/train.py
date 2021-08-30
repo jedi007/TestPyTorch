@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
 
         loss = compute_loss(pred, targets, model)
-        # print("loss: ",loss)
+        print("loss: ",loss)
 
 
         

@@ -234,38 +234,13 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
     #     for col in range(pred.shape[1]):
 
 
-    for i, pi in enumerate(pred):  # layer index, layer predictions
-        print("i",i)
-        #print("pi",pi)
-
-        b, a, gj, gi = 0,0,0,0
-
-        tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
-
-        nb = b.shape[0]  # number of targets
-        if nb:
-            # 对应匹配到正样本的预测信息
-            ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
-
-            # GIoU
-            pxy = ps[:, :2].sigmoid()
-
-            pwh = ps[:, 2:4].exp().clamp(max=1E3) * anchors[i]
-
-            pbox = torch.cat((pxy, pwh), 1)  # predicted box
-
-            giou = bbox_iou(pbox.t(), tbox[i], x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
-
-            lbox += (1.0 - giou).mean()  # giou loss
-
-            # Obj
-            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
-
-        lobj += BCEobj(pi[..., 4], tobj)  # obj loss
+    print("pred.shape",pred.shape)
+    device = torch.device("cuda:0")
+    lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
 
     # 乘上每种损失的对应权重
-    lbox *= h['giou']
-    lobj *= h['obj']
+    # lbox *= h['giou']
+    # lobj *= h['obj']
 
 
 
