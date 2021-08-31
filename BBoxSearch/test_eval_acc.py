@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     model = YOLOv3Model_Gray()
     model.to(device)
-    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-0-mloss=0.7216.pt"))
+    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-10-mloss=0.0464.pt"))
     model.eval()
 
     for i, (imgs, targets, paths, _, _) in enumerate(val_dataloader):
@@ -63,15 +63,24 @@ if __name__ == '__main__':
 
         pobj = (pobj > 0.28).int()
         print("after　pobj[0][0][0]:　",pobj[0][0][0])
+        pobj[0][0][0][0] = 1
 
         sum = pobj.sum()
         print("sum: ",sum.item())
 
 
         targets, tobj = build_targets(pred, targets)  # targets
+        print( "tobj[0][0][0]:　",tobj[0][0][0] )
+        tobj[0][0][0][0] = 1
 
         tsum = tobj.sum()
         print("tsum: ",tsum.int().item())
+
+
+        yy = ((tobj.int() + pobj) == 2).int()
+        print("yy.shape: ",yy.shape)
+        print( "yy[0][0][0]:　",yy[0][0][0] )
+        print("yy.sum: ",yy.sum())
 
 
         print("targets.shape: ",targets.shape)
