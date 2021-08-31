@@ -229,12 +229,10 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
     nt = 0  # targets
     #pred.shape:  torch.Size([1, 32, 32, 9, 5])
     pobj = pred[:,:,:,:,[0]].view( pred.shape[0], -1)
-    print("pobj.shape: ",pobj.shape)
     # for row in range(pred.shape[0]):
     #     for col in range(pred.shape[1]):
 
 
-    print("pred.shape",pred.shape)
     device = torch.device("cuda:0")
     lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
 
@@ -243,6 +241,7 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
     # lobj *= h['obj']
 
 
+    return lobj
 
     # loss = lbox + lobj + lcls
     return {"box_loss": lbox,
@@ -274,21 +273,14 @@ def build_targets(pred, targets):
         tobj[index][0] = max_like_index   
         
     grid = torch.floor( targets[:,[0,2,3]] )
-    print("grid: ",grid)
     
     tobj = torch.cat( (grid,tobj ),1 ).int()
-    print("targets: ",targets)
-
-    print("tobj: ",tobj)
 
     #pred.shape:  torch.Size([1, 32, 32, 9, 5])
     tobj2 = torch.zeros( (pred.shape[0],pred.shape[1],pred.shape[2],pred.shape[3],1) )
-    print("tobj2.shape: ",tobj2.shape)
     for i in range( tobj.shape[0] ):
-        print("tobj[i]: ",tobj[i])
         tobj2[ tobj[i][0] ][ tobj[i][1] ][ tobj[i][2] ][ tobj[i][3] ][0] = 1.
         
-    print("tobj2[0][16][18]: ",tobj2[0][16][18])
     return targets,tobj2
 
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6,

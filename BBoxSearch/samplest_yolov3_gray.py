@@ -180,7 +180,7 @@ class YOLOv3Model_Gray(nn.Module):
         for i in range( len(self.module_list) ):
             x = self.module_list[i](x)
 
-        print("out x.shape: ",x.shape)
+        #print("out x.shape: ",x.shape)
 
         batchsize = x.shape[0]
         gradsize = x.shape[2]
