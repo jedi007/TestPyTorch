@@ -61,9 +61,8 @@ if __name__ == '__main__':
 
         print("pobj[0][0][0]:　",pobj[0][0][0])
 
-        pobj = (pobj > 0.28).int()
+        pobj = (pobj > -2.5).int()
         print("after　pobj[0][0][0]:　",pobj[0][0][0])
-        pobj[0][0][0][0] = 1
 
         sum = pobj.sum()
         print("sum: ",sum.item())
@@ -71,7 +70,6 @@ if __name__ == '__main__':
 
         targets, tobj = build_targets(pred, targets)  # targets
         print( "tobj[0][0][0]:　",tobj[0][0][0] )
-        tobj[0][0][0][0] = 1
 
         tsum = tobj.sum()
         print("tsum: ",tsum.int().item())
