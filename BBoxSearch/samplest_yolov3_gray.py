@@ -152,6 +152,8 @@ class YOLOv3Model_Gray(nn.Module):
         self.module_list.append( Residual(32,16,32) )
         self.module_list.append( Convolutional(32,64,3,2) )
 
+        
+        
         modules = nn.Sequential()
         modules.add_module("Conv2d", nn.Conv2d(in_channels=64,
                                                 out_channels=45,
@@ -185,6 +187,8 @@ class YOLOv3Model_Gray(nn.Module):
         batchsize = x.shape[0]
         gradsize = x.shape[2]
         out = x.view(batchsize, gradsize, gradsize, 9, 5)
+
+        torch.sigmoid_( out[...,0] )
         return out
 
     def info(self, verbose=True):

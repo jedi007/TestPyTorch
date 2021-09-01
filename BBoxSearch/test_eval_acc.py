@@ -36,8 +36,8 @@ if __name__ == '__main__':
 
 
     model = YOLOv3Model_Gray()
+    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-13-mloss=0.7304.pt"))
     model.to(device)
-    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-10-mloss=0.0464.pt"))
     model.eval()
 
     for i, (imgs, targets, paths, _, _) in enumerate(val_dataloader):
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
         print("pobj[0][0][0]:　",pobj[0][0][0])
 
-        pobj = (pobj > -2.5).int()
+        pobj = (pobj > 0.2).int()
         print("after　pobj[0][0][0]:　",pobj[0][0][0])
 
         sum = pobj.sum()

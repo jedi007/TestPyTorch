@@ -17,6 +17,9 @@ if __name__ == '__main__':
 
 
     opt = parser.parse_args()
+
+    opt.lr = 0.1
+
     device = torch.device("cuda:0")
 
     train_path = "D:/TestData/data/my_train_data.txt"
@@ -35,18 +38,18 @@ if __name__ == '__main__':
 
 
     model = YOLOv3Model_Gray()
+    #model.load_state_dict( torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-10-mloss=0.7476.pt") )
     model.to(device)
     model.train()
 
     
     # optimizer
     parameters_grad = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(parameters_grad, lr=0.001, momentum=0.937,
+    optimizer = optim.SGD(parameters_grad, lr=opt.lr, momentum=0.937,
                           weight_decay=0.005, nesterov=True)
 
-    start_epoch = 0
-    epochs = 30
-    for epoch in range(start_epoch, epochs):
+    start_epoch = 13
+    for epoch in range(start_epoch, opt.epochs):
         mean_loss = 0
         model.train()
         for i, (imgs, targets, paths, _, _) in enumerate(train_dataloader):
