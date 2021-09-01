@@ -13,14 +13,15 @@ print("current_work_dir: ",current_work_dir)
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=30)
-    parser.add_argument('--batch-size', type=int, default=6)
+    parser.add_argument('--batch-size', type=int, default=4)
 
 
     opt = parser.parse_args()
 
-    opt.lr = 0.1
+    opt.lr = 0.001
+    opt.start_epoch = 0
 
-    device = torch.device("cuda:0")
+    opt.device = torch.device("cpu")
 
     train_path = "D:/TestData/data/my_train_data.txt"
     test_path = "D:/TestData/data/my_train_data.txt"
@@ -38,8 +39,8 @@ if __name__ == '__main__':
 
 
     model = YOLOv3Model_Gray()
-    #model.load_state_dict( torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-10-mloss=0.7476.pt") )
-    model.to(device)
+    #model.load_state_dict( torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-0-mloss=0.7274.pt") )
+    model.to( opt.device )
     model.train()
 
     
@@ -48,20 +49,21 @@ if __name__ == '__main__':
     optimizer = optim.SGD(parameters_grad, lr=opt.lr, momentum=0.937,
                           weight_decay=0.005, nesterov=True)
 
-    start_epoch = 13
-    for epoch in range(start_epoch, opt.epochs):
+    for epoch in range(opt.start_epoch, opt.epochs):
         mean_loss = 0
         model.train()
         for i, (imgs, targets, paths, _, _) in enumerate(train_dataloader):
     
-            inputs = torch.zeros( (imgs.shape[0],1,imgs.shape[2],imgs.shape[3]),device=device )
+            optimizer.zero_grad()
+
+            inputs = torch.zeros( (imgs.shape[0],1,imgs.shape[2],imgs.shape[3]),device=opt.device )
             for img_index in range( imgs.shape[0] ):
                 img_o = imgs[img_index]
 
                 img_numpy = img_o.permute(1, 2, 0).numpy()[:,:,[2,1,0]]
                 img_gray = cv2.cvtColor(img_numpy,cv2.COLOR_BGR2GRAY)
 
-                inputs[img_index] = torch.tensor(img_gray.reshape(1,1,512,512),device=device)/255.
+                inputs[img_index] = torch.tensor(img_gray.reshape(1,1,512,512),device=opt.device)/255.
                 
 
             #print("inputs.shape: ",inputs.shape)
@@ -71,16 +73,23 @@ if __name__ == '__main__':
 
             now_lr = optimizer.param_groups[0]["lr"]
 
-            loss = compute_loss(pred, targets, model)
+            loss = compute_loss(pred, targets, opt.device)
 
             mean_loss = (mean_loss*i+loss)/(i+1)
             
             if i % 20 == 0:
                 print("time: {}  epoch: {} step: {}  now_lr: {} mean_loss: {:.4f}  loss: {:.4f}".format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),epoch, i, now_lr, mean_loss.item(), loss.item()))
 
-            optimizer.zero_grad()
+            
             loss.backward()
+
+            # print("model.module_list[0].weight[2][0][0]:　")
+            # print(model.module_list[0].module_list[0][0].weight[2][0][0])
+            # print(model.module_list[0].module_list[0][0].weight.grad[2][0][0])
+
             optimizer.step()
+
+            #exit(0)
 
         
         #保存/加载完整模型

@@ -206,7 +206,7 @@ def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#iss
     return 1.0 - 0.5 * eps, 0.5 * eps
 
 
-def compute_loss(pred, targets, model):  # predictions, targets, model
+def compute_loss(pred, targets, device):  # predictions, targets, model
     device = pred[0].device
     lbox = torch.zeros(1, device=device)  # Tensor(0)
     lobj = torch.zeros(1, device=device)  # Tensor(0)
@@ -234,7 +234,6 @@ def compute_loss(pred, targets, model):  # predictions, targets, model
     #     for col in range(pred.shape[1]):
 
 
-    device = torch.device("cuda:0")
     lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
 
     # 乘上每种损失的对应权重

@@ -12,7 +12,7 @@ print("current_work_dir: ",current_work_dir)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=30)
+    
     parser.add_argument('--batch-size', type=int, default=6)
 
     opt = parser.parse_args()
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
 
     model = YOLOv3Model_Gray()
-    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-13-mloss=0.7304.pt"))
+    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-0-mloss=0.7023.pt"))
     model.to(device)
     model.eval()
 
