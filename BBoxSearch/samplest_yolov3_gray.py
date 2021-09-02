@@ -79,9 +79,19 @@ class YOLOv3Model_Gray(nn.Module):
 
         self.module_list.append( Convolutional(128,128,3,1) )
 
-        #Residual x1
+        #Residual x8
         self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Residual(128,64,128) )
+
         self.module_list.append( Convolutional(128,64,3,2) )
+
+        
 
         #Residual x1
         self.module_list.append( Convolutional(64,64,3,1) )
