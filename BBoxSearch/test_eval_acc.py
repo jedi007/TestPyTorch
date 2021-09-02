@@ -4,8 +4,8 @@ from ImagesAndLabelsSet import *
 import cv2
 from build_utils.utils import *
 
-import torch.optim as optim
-import datetime
+
+from tqdm import tqdm
 
 current_work_dir = os.path.dirname(__file__)  # 当前文件所在的目录
 print("current_work_dir: ",current_work_dir)
@@ -36,11 +36,18 @@ if __name__ == '__main__':
 
 
     model = YOLOv3Model_Gray()
-    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-0-mloss=0.7023.pt"))
+    model.load_state_dict(torch.load("D:\Study\GitHub\TestPyTorch\BBoxSearch\savepath\savemodel-35-mloss=0.4508.pt"))
     model.to(device)
     model.eval()
 
+    
+    total_right_pbj = 0
+    total_pobj = 0
+    total_tobj = 0
+
     for i, (imgs, targets, paths, _, _) in enumerate(val_dataloader):
+        print(">>>>>>>>>>>>>>> {} / {} : ".format(i, val_dataset.batch_number ) )
+        print(imgs.shape)
     
         inputs = torch.zeros( (imgs.shape[0],1,imgs.shape[2],imgs.shape[3]),device=device )
 
@@ -54,34 +61,44 @@ if __name__ == '__main__':
 
         pred = model( inputs )
 
-        print("val: pred.shape: ",pred.shape)
+        #print("val: pred.shape: ",pred.shape)
 
         pobj = pred[...,[0]]
-        print("pobj.shape: ",pobj.shape)
+        #print("pobj.shape: ",pobj.shape)
 
-        print("pobj[0][0][0]:　",pobj[0][0][0])
+        #print("pobj[0][0][0]:　",pobj[0][0][0])
 
-        pobj = (pobj > 0.2).int()
-        print("after　pobj[0][0][0]:　",pobj[0][0][0])
+        pobj = (pobj > 0.95).int()
+        #print("after　pobj[0][0][0]:　",pobj[0][0][0])
 
-        sum = pobj.sum()
-        print("sum: ",sum.item())
+        psum = pobj.sum()
+        #print("psum: ",psum.item())
+        total_pobj += psum
 
 
-        targets, tobj = build_targets(pred, targets)  # targets
-        print( "tobj[0][0][0]:　",tobj[0][0][0] )
+
+        targets, tobj = build_targets(pred, targets, device)  # targets
+        #print( "tobj[0][0][0]:　",tobj[0][0][0] )
 
         tsum = tobj.sum()
-        print("tsum: ",tsum.int().item())
+        #print("tsum: ",tsum.int().item())
+        total_tobj += tsum
 
 
-        yy = ((tobj.int() + pobj) == 2).int()
-        print("yy.shape: ",yy.shape)
-        print( "yy[0][0][0]:　",yy[0][0][0] )
-        print("yy.sum: ",yy.sum())
+        right_pobj = ((tobj.int() + pobj) == 2).int()
+        #print("right_pobj.shape: ",right_pobj.shape)
+        #print( "right_pobj[0][0][0]:　",right_pobj[0][0][0] )
+        #print("right_pobj.sum: ",right_pobj.sum())
+        total_right_pbj += right_pobj.sum()
 
 
-        print("targets.shape: ",targets.shape)
-        print("tobj.shape: ",tobj.shape)
 
-        exit(0)
+
+        #print("targets.shape: ",targets.shape)
+        #print("tobj.shape: ",tobj.shape)
+
+    
+        print("total_right_pbj: ",total_right_pbj)
+        print("total_pobj: ",total_pobj)
+        print("total_tobj: ",total_tobj)
+    

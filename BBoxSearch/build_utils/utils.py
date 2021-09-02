@@ -254,7 +254,7 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
     return {"box_loss": lbox,
             "obj_loss": lobj}
 
-def build_targets(pred, targets):
+def build_targets(pred, targets, device):
     #anchors_list = [ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
     anchors_list = [ [10,13,130],  [16,30,480],  [33,23,759],  [30,61,1830],  [62,45,2790],  [59,119,7021],  [116,90,10440],  [156,198,30888],  [373,326,121598] ]
 
@@ -284,7 +284,7 @@ def build_targets(pred, targets):
     tobj = torch.cat( (grid,tobj ),1 ).int()
 
     #pred.shape:  torch.Size([1, 32, 32, 9, 5])
-    tobj2 = torch.zeros( (pred.shape[0],pred.shape[1],pred.shape[2],pred.shape[3],1) )
+    tobj2 = torch.zeros( (pred.shape[0],pred.shape[1],pred.shape[2],pred.shape[3],1),device=device )
     for i in range( tobj.shape[0] ):
         tobj2[ tobj[i][0] ][ tobj[i][1] ][ tobj[i][2] ][ tobj[i][3] ][0] = 1.
         
