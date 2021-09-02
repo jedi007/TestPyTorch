@@ -74,28 +74,28 @@ class YOLOv3Model_Gray(nn.Module):
         self.module_list.append( Convolutional(1,32,3,1) )
         self.module_list.append( Convolutional(32,64,3,2) )
 
-        #Residual x1
-        self.module_list.append( Residual(64,32,64) )
+        self.module_list.append( Convolutional(64,64,3,1) )
         self.module_list.append( Convolutional(64,128,3,2) )
 
-        #Residual x4
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
+        self.module_list.append( Convolutional(128,128,3,1) )
 
         #Residual x1
         self.module_list.append( Residual(128,64,128) )
         self.module_list.append( Convolutional(128,64,3,2) )
 
         #Residual x1
-        self.module_list.append( Residual(64,32,64) )
+        self.module_list.append( Convolutional(64,64,3,1) )
         self.module_list.append( Convolutional(64,128,3,2) )
+
+        
+        self.module_list.append( Convolutional(128,64,3,1) )
 
 
 
         
         
         modules = nn.Sequential()
-        modules.add_module("Conv2d", nn.Conv2d(in_channels=128,
+        modules.add_module("Conv2d", nn.Conv2d(in_channels=64,
                                                 out_channels=9,
                                                 kernel_size=1,
                                                 stride=1,

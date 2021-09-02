@@ -219,7 +219,8 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
 
     # Define criteria
     #obj_pw: 1.0  # obj BCELoss positive_weight
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0], device=device), reduction=red)
+    #BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0], device=device), reduction=red) //会将输入sigmoid 一次在进行计算
+    BCEobj = nn.BCELoss(reduction=red)
 
     # focal loss
     # g = h['fl_gamma']  # focal loss gamma
@@ -235,6 +236,12 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
 
 
     lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
+
+    ppred = pred[ tobj.bool() ]
+
+    ttobj = torch.ones_like(ppred,device=device)
+    right_loss = BCEobj(ppred, ttobj )
+    lobj += right_loss*4
 
     # 乘上每种损失的对应权重
     # lbox *= h['giou']
