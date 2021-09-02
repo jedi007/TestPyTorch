@@ -210,7 +210,7 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
     device = pred[0].device
     lbox = torch.zeros(1, device=device)  # Tensor(0)
     lobj = torch.zeros(1, device=device)  # Tensor(0)
-    targets, tobj = build_targets(pred, targets)  # targets
+    targets, tobj = build_targets(pred, targets, device=device)  # targets
 
     #print("tobj.shape: ",tobj.shape)  #tobj.shape:  torch.Size([6, 32, 32, 9, 1])
     
@@ -236,20 +236,17 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
 
 
     lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
-    print("lobj: ",lobj)
 
     # 增加正样本权重
-    ppred = pred[ tobj.bool() ]
-    print( "ppred: ",ppred )
-    ttobj = torch.ones_like(ppred,device=device)
-    right_loss = BCEobj(ppred, ttobj )
-    print("right_loss: ",right_loss)
+    # ppred = pred[ tobj.bool() ]
+    # print( "ppred: ",ppred )
+    # ttobj = torch.ones_like(ppred,device=device)
+    # right_loss = BCEobj(ppred, ttobj )
+    # print("right_loss: ",right_loss)
 
-    lobj += right_loss*10
+    # lobj += right_loss*10
 
-    print("lobj: ",lobj)
-
-    exit(0)
+    # print("lobj: ",lobj)
 
     # 乘上每种损失的对应权重
     # lbox *= h['giou']

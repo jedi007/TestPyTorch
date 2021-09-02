@@ -46,8 +46,7 @@ if __name__ == '__main__':
     
     # optimizer
     parameters_grad = [p for p in model.parameters() if p.requires_grad]
-    #optimizer = optim.SGD(parameters_grad, lr=opt.lr )
-    optimizer = optim.SGD(parameters_grad, lr=opt.lr, momentum=0.937,weight_decay=0.005, nesterov=True)
+    optimizer = optim.SGD(parameters_grad, lr=opt.lr )
 
     for epoch in range(opt.start_epoch, opt.epochs):
         mean_loss = 0
