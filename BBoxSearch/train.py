@@ -12,7 +12,7 @@ print("current_work_dir: ",current_work_dir)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=6)
 
 
@@ -39,16 +39,15 @@ if __name__ == '__main__':
 
 
     model = YOLOv3Model_Gray()
-    #model.load_state_dict( torch.load("E:\GitHubProtects\TestPyTorch\BBoxSearch\savepath\savemodel-8-mloss=0.7120.pt") )
+    #model.load_state_dict( torch.load("E:\GitHubProtects\TestPyTorch\BBoxSearch\savepath\savemodel-28-mloss=0.5676.pt") )
     model.to( opt.device )
     model.train()
 
     
     # optimizer
     parameters_grad = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(parameters_grad, lr=opt.lr )
-    optimizer = optim.SGD(parameters_grad, lr=opt.lr, momentum=0.937,
-                        weight_decay=0.005, nesterov=True)
+    #optimizer = optim.SGD(parameters_grad, lr=opt.lr )
+    optimizer = optim.SGD(parameters_grad, lr=opt.lr, momentum=0.937,weight_decay=0.005, nesterov=True)
 
     for epoch in range(opt.start_epoch, opt.epochs):
         mean_loss = 0
@@ -84,7 +83,7 @@ if __name__ == '__main__':
             
             loss.backward()
 
-            print("model.module_list[0].weight.grad[2][0][0]:　",model.module_list[0].module_list[0][0].weight.grad[2][0][0])
+            #print("model.module_list[0].weight.grad[2][0][0]:　",model.module_list[0].module_list[0][0].weight.grad[2][0][0])
             #print(model.module_list[0].module_list[0][0].weight[2][0][0])
 
             optimizer.step()
