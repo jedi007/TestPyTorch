@@ -215,7 +215,7 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
     #print("tobj.shape: ",tobj.shape)  #tobj.shape:  torch.Size([6, 32, 32, 9, 1])
     
 
-    red = 'mean'  # Loss reduction (sum or mean)
+    red = 'sum'  # Loss reduction (sum or mean)
 
     # Define criteria
     #obj_pw: 1.0  # obj BCELoss positive_weight
@@ -236,12 +236,20 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
 
 
     lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
+    print("lobj: ",lobj)
 
+    # 增加正样本权重
     ppred = pred[ tobj.bool() ]
-
+    print( "ppred: ",ppred )
     ttobj = torch.ones_like(ppred,device=device)
     right_loss = BCEobj(ppred, ttobj )
-    lobj += right_loss*4
+    print("right_loss: ",right_loss)
+
+    lobj += right_loss*10
+
+    print("lobj: ",lobj)
+
+    exit(0)
 
     # 乘上每种损失的对应权重
     # lbox *= h['giou']
