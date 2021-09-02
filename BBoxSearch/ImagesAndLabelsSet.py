@@ -58,7 +58,7 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         # 将数据划分到一个个batch中
         batch_index = np.floor(np.arange(img_files_number) / batch_size).astype(np.int)
         # 记录数据集划分后的总batch数
-        batch_number = batch_index[-1] + 1  # number of batches
+        self.batch_number = batch_index[-1] + 1  # number of batches
 
         self.img_number = img_files_number  # number of images 图像总数目
         self.batch_index = batch_index  # batch index of image 记录哪些图片属于哪个batch
