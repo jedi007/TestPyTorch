@@ -212,14 +212,14 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
     lobj = torch.zeros(1, device=device)  # Tensor(0)
     targets, tobj = build_targets(pred, targets, device=device)  # targets
 
-    #print("tobj.shape: ",tobj.shape)  #tobj.shape:  torch.Size([6, 32, 32, 9, 1])
-    
+    #print("tobj.shape: ",tobj.shape)  #tobj.shape:  torch.Size([6, 32, 32])
+    #print("tobj[0]: ",tobj[0][16])
+    #exit(0)
 
-    red = 'sum'  # Loss reduction (sum or mean)
-
+    red = 'mean'  # Loss reduction (sum or mean)
     # Define criteria
     #obj_pw: 1.0  # obj BCELoss positive_weight
-    #BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0], device=device), reduction=red) //会将输入sigmoid 一次在进行计算
+    #BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0], device=device), reduction=red) #会将输入sigmoid 一次在进行计算
     BCEobj = nn.BCELoss(reduction=red)
 
     # focal loss
@@ -227,15 +227,9 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
     # if g > 0:
     #     BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
-    # per output
-    nt = 0  # targets
-    #pred.shape:  torch.Size([1, 32, 32, 9, 5])
-    pobj = pred[:,:,:,:,[0]].view( pred.shape[0], -1)
-    # for row in range(pred.shape[0]):
-    #     for col in range(pred.shape[1]):
 
 
-    lobj += BCEobj(pred[..., 0].to(device), tobj[...,0].to(device) )  # obj loss
+    lobj += BCEobj(pred.to(device), tobj.to(device) )  # obj loss
 
     # 增加正样本权重
     # ppred = pred[ tobj.bool() ]
@@ -243,21 +237,9 @@ def compute_loss(pred, targets, device):  # predictions, targets, model
     # ttobj = torch.ones_like(ppred,device=device)
     # right_loss = BCEobj(ppred, ttobj )
     # print("right_loss: ",right_loss)
-
     # lobj += right_loss*10
 
-    # print("lobj: ",lobj)
-
-    # 乘上每种损失的对应权重
-    # lbox *= h['giou']
-    # lobj *= h['obj']
-
-
     return lobj
-
-    # loss = lbox + lobj + lcls
-    return {"box_loss": lbox,
-            "obj_loss": lobj}
 
 def build_targets(pred, targets, device):
     #anchors_list = [ [10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326] ]
@@ -266,34 +248,38 @@ def build_targets(pred, targets, device):
     #grid_size = torch.tensor(pred.shape)[[1, 2]]
     grid_size = pred.shape[1]
 
+    #print("targets： ", targets.shape) #torch.Size([12, 6])
+    #print("pred： ", pred.shape)
+
+    tobj = torch.zeros_like(pred)
+
     targets[:,2:4] /= (1/grid_size)
     targets[:,4:] *= 512
 
-    tobj = torch.zeros( (targets.shape[0],1) )
+    targets = torch.floor(targets).int()
 
-    for index in  range( len(targets) ):
-        target_size = targets[index,4:]
-        max_like = 0
-        max_like_index = -1
-        for anchor_index in range( len(anchors_list) ):
-            area1 = min( target_size[0],anchors_list[anchor_index][0] ) * min( target_size[1],anchors_list[anchor_index][1] )
-            area2 = anchors_list[anchor_index][2] + target_size[0]*target_size[1]
-            like_d = area1/(area2-area1)
-            if like_d > max_like:
-                max_like = like_d
-                max_like_index = anchor_index
-        tobj[index][0] = max_like_index   
-        
-    grid = torch.floor( targets[:,[0,2,3]] )
-    
-    tobj = torch.cat( (grid,tobj ),1 ).int()
+    for index in  range( targets.shape[0] ):
+        target = targets[index]
+        batch_index = target[0].item()
 
-    #pred.shape:  torch.Size([1, 32, 32, 9, 5])
-    tobj2 = torch.zeros( (pred.shape[0],pred.shape[1],pred.shape[2],pred.shape[3],1),device=device )
-    for i in range( tobj.shape[0] ):
-        tobj2[ tobj[i][0] ][ tobj[i][1] ][ tobj[i][2] ][ tobj[i][3] ][0] = 1.
+        tobj[batch_index][target[2].item()][target[3].item()] = 1.
+
+
+
+
+        # target_size = targets[index,4:]
+        # max_like = 0
+        # max_like_index = -1
+        # for anchor_index in range( len(anchors_list) ):
+        #     area1 = min( target_size[0],anchors_list[anchor_index][0] ) * min( target_size[1],anchors_list[anchor_index][1] )
+        #     area2 = anchors_list[anchor_index][2] + target_size[0]*target_size[1]
+        #     like_d = area1/(area2-area1)
+        #     if like_d > max_like:
+        #         max_like = like_d
+        #         max_like_index = anchor_index
+        # tobj[index][0] = max_like_index   
         
-    return targets,tobj2
+    return targets,tobj
 
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6,
                         multi_label=True, classes=None, agnostic=False, max_num=100):

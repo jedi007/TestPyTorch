@@ -7,6 +7,12 @@ from build_utils.utils import *
 import torch.optim as optim
 import datetime
 
+
+
+#训练结果无法收敛，loss不下降，失败！
+
+
+
 current_work_dir = os.path.dirname(__file__)  # 当前文件所在的目录
 print("current_work_dir: ",current_work_dir)
 
@@ -33,7 +39,7 @@ if __name__ == '__main__':
                                                    batch_size=opt.batch_size,
                                                    num_workers=1,
                                                    # Shuffle=True unless rectangular training is used
-                                                   shuffle= False,
+                                                   shuffle= True,
                                                    pin_memory=True,
                                                    collate_fn=train_dataset.collate_fn)
 
@@ -46,7 +52,8 @@ if __name__ == '__main__':
     
     # optimizer
     parameters_grad = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.SGD(parameters_grad, lr=opt.lr )
+    #optimizer = optim.SGD(parameters_grad, lr=opt.lr )
+    optimizer = optim.Adam( parameters_grad, lr=opt.lr )
 
     for epoch in range(opt.start_epoch, opt.epochs):
         mean_loss = 0
@@ -74,20 +81,15 @@ if __name__ == '__main__':
 
             loss = compute_loss(pred, targets, opt.device)
 
+            loss.backward()
+            optimizer.step()
+
             mean_loss = (mean_loss*i+loss)/(i+1)
             
             if i % 20 == 0:
                 print("time: {}  epoch: {} step: {}  now_lr: {} mean_loss: {:.4f}  loss: {:.4f}".format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),epoch, i, now_lr, mean_loss.item(), loss.item()))
+                print("model.module_list[0].weight.grad[2][0][0]:　",model.module_list[0].module_list[0][0].weight.grad[2][0][0])
 
-            
-            loss.backward()
-
-            #print("model.module_list[0].weight.grad[2][0][0]:　",model.module_list[0].module_list[0][0].weight.grad[2][0][0])
-            #print(model.module_list[0].module_list[0][0].weight[2][0][0])
-
-            optimizer.step()
-
-            #exit(0)
 
         
         #保存/加载完整模型

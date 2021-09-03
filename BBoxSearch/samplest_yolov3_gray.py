@@ -3,7 +3,7 @@ from torch import tensor
 import torch.nn as nn
 
 class Convolutional(nn.Module):
-    def __init__(self,in_channels,out_channels,kernel_size,stride):
+    def __init__(self,in_channels,out_channels,kernel_size,stride,useBN = False):
         super(Convolutional, self).__init__()
 
         # 根据解析的网络结构一层一层去搭建
@@ -17,8 +17,10 @@ class Convolutional(nn.Module):
                                                     stride=stride,
                                                     padding=kernel_size // 2 ,
                                                     bias=False))
+            nn.init.kaiming_normal_(modules[0].weight.data)
 
-            modules.add_module("BatchNorm2d", nn.BatchNorm2d(out_channels))
+            if useBN:
+                modules.add_module("BatchNorm2d", nn.BatchNorm2d(out_channels))
             modules.add_module("activation", nn.LeakyReLU(0.1, inplace=True))
             self.module_list.append(modules)
         else:
@@ -74,31 +76,37 @@ class YOLOv3Model_Gray(nn.Module):
         self.module_list.append( Convolutional(1,32,3,1) )
         self.module_list.append( Convolutional(32,64,3,2) )
 
-        self.module_list.append( Convolutional(64,64,3,1) )
-        self.module_list.append( Convolutional(64,128,3,2) )
+        self.module_list.append( Convolutional(64,128,3,1) )
+        self.module_list.append( Convolutional(128,128,3,2, useBN = True) )
 
-        self.module_list.append( Convolutional(128,128,3,1) )
+        #self.module_list.append( Convolutional(128,128,3,1) )
 
         #Residual x8
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
-        self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
+        # self.module_list.append( Residual(128,64,128) )
 
-        self.module_list.append( Convolutional(128,64,3,2) )
-
-        
-
-        #Residual x1
-        self.module_list.append( Convolutional(64,64,3,1) )
-        self.module_list.append( Convolutional(64,128,3,2) )
+        self.module_list.append( Convolutional(128,256,3,1) )
+        self.module_list.append( Convolutional(256,128,3,2) )
 
         
-        self.module_list.append( Convolutional(128,64,3,1) )
+
+        self.module_list.append( Convolutional(128,128,3,1) )
+        self.module_list.append( Convolutional(128,128,3,2, useBN = True) )
+
+        
+        self.module_list.append( Convolutional(128,128,3,1 ) )
+        self.module_list.append( Convolutional(128,128,3,1) )
+        self.module_list.append( Convolutional(128,128,3,1) )
+        self.module_list.append( Convolutional(128,128,3,1, useBN = True) )
+        self.module_list.append( Convolutional(128,128,3,1) )
+        self.module_list.append( Convolutional(128,128,3,1) )
+        self.module_list.append( Convolutional(128,64,3,1, useBN = True) )
 
 
 
@@ -106,7 +114,7 @@ class YOLOv3Model_Gray(nn.Module):
         
         modules = nn.Sequential()
         modules.add_module("Conv2d", nn.Conv2d(in_channels=64,
-                                                out_channels=9,
+                                                out_channels=1,
                                                 kernel_size=1,
                                                 stride=1,
                                                 padding=1 // 2 ,
@@ -136,9 +144,9 @@ class YOLOv3Model_Gray(nn.Module):
 
         batchsize = x.shape[0]
         gradsize = x.shape[2]
-        out = x.view(batchsize, gradsize, gradsize, 9, -1)
+        out = x.view(batchsize, gradsize, gradsize)
 
-        torch.sigmoid_( out[...,0] )
+        torch.sigmoid_( out )
         return out
 
     def info(self, verbose=True):
@@ -158,6 +166,8 @@ class YOLOv3Model_Gray(nn.Module):
 
         self.load_state_dict( newdic )
         print("load model successed")
+
+    
     
 
 def model_info(model, verbose=False):
