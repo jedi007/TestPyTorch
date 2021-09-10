@@ -138,7 +138,7 @@ if __name__ == '__main__':
     [transforms.ToTensor(),
      transforms.Normalize((0.5), (0.5))])
 
-    trainset = torchvision.datasets.MNIST(root='D:/Study/GitHub/TestPyTorch/data', train=True,
+    trainset = torchvision.datasets.MNIST(root='G:/AIData/pytorchData', train=True,
                                             download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
                                             shuffle=False,drop_last = True)
