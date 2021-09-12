@@ -57,7 +57,6 @@ if __name__ == '__main__':
 
     for epoch in range(opt.start_epoch, opt.epochs):
         mean_loss = 0
-        model.train()
         for i, (imgs, targets, paths, _, _) in enumerate(train_dataloader):
     
             optimizer.zero_grad()
