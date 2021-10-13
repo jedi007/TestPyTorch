@@ -11,8 +11,8 @@ import torch.nn.functional as F
 
 from utils import bboxes_iou
 
-from losses import IOUloss
-from network_blocks import BaseConv, DWConv
+from .losses import IOUloss
+from .network_blocks import BaseConv, DWConv
 
 
 class YOLOXHead(nn.Module):

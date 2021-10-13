@@ -1,20 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 # Copyright (c) 2014-2021 Megvii Inc. All rights reserved.
-import os
-
-current_work_dir = os.path.dirname(__file__)  # 当前文件所在的目录
-base_dir = "/".join(current_work_dir.split("/")[0:-1])
-print("base_dir: ",base_dir)
-
-import sys
-sys.path.append(base_dir)
-
-
 import torch.nn as nn
 
-from yolo_head import YOLOXHead
-from yolo_pafpn import YOLOPAFPN
+from .yolo_head import YOLOXHead
+from .yolo_pafpn import YOLOPAFPN
 
 
 class YOLOX(nn.Module):
@@ -55,7 +45,3 @@ class YOLOX(nn.Module):
             outputs = self.head(fpn_outs)
 
         return outputs
-
-if __name__ == "__main__":
-    model = YOLOX()
-    print(model)
