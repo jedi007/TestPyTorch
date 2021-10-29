@@ -11,16 +11,14 @@ sys.path.append(current_work_dir)
 from models import yolox
 import torch
 import torch.nn as nn
+import time
 
 from data.datasets.coco import COCODataset
 from data.data_augment import TrainTransform
 from data.datasets.mosaicdetection import MosaicDetection
-# from data import (
-#         YoloBatchSampler,
-#         DataLoader,
-#         InfiniteSampler,
-#         worker_init_reset_seed,
-#     )
+from data.samplers import InfiniteSampler,YoloBatchSampler
+from data.dataloading import DataLoader,worker_init_reset_seed
+from data.data_prefetcher import DataPrefetcher
 
 
 if __name__ == "__main__":
@@ -52,21 +50,16 @@ if __name__ == "__main__":
     optimizer.add_param_group({"params": pg2})
     #=====================================init optimizer============================ over
 
+
     # value of epoch will be set in `resume_train`
     # model = self.resume_train(model) #加载保存的权值
-
-    # # data related init
-    # self.train_loader = self.exp.get_data_loader(
-    #     batch_size=self.args.batch_size,
-    #     is_distributed=self.is_distributed,
-    #     no_aug=self.no_aug,
-    #     cache_img=self.args.cache,
-    # )
     
+
+    #=====================================init data_loader============================
     dataset = COCODataset(
         data_dir="D:\work\Study\Data\COCO2017",
         json_file="instances_val2017.json", #"instances_train2017.json"  为运行研究方便改动val，真实训练该启用tain
-        name="train2017",
+        name="val2017",
         img_size=(416, 416),
         preproc=TrainTransform(max_labels=50),
         cache=False,
@@ -79,33 +72,73 @@ if __name__ == "__main__":
         preproc=TrainTransform(max_labels=120)
     )
 
+    sampler = InfiniteSampler(len(dataset), seed=0)
 
-    # self.prefetcher = DataPrefetcher(self.train_loader)
-    # # max_iter means iters per epoch
-    # self.max_iter = len(self.train_loader)
+    batch_sampler = YoloBatchSampler(
+        sampler=sampler,
+        batch_size=2,
+        drop_last=False,
+        mosaic=True,
+    )
 
-    # self.lr_scheduler = self.exp.get_lr_scheduler(
-    #     self.exp.basic_lr_per_img * self.args.batch_size, self.max_iter
-    # )
-    # if self.args.occupy:
-    #     occupy_mem(self.local_rank)
+    data_num_workers = 1
+    dataloader_kwargs = {"num_workers": 1, "pin_memory": True}
+    dataloader_kwargs["batch_sampler"] = batch_sampler
 
-    # if self.is_distributed:
-    #     model = DDP(model, device_ids=[self.local_rank], broadcast_buffers=False)
+    # Make sure each process has different random seed, especially for 'fork' method.
+    # Check https://github.com/pytorch/pytorch/issues/63311 for more details.
+    dataloader_kwargs["worker_init_fn"] = worker_init_reset_seed
 
-    # if self.use_model_ema:
-    #     self.ema_model = ModelEMA(model, 0.9998)
-    #     self.ema_model.updates = self.max_iter * self.start_epoch
+    train_loader = DataLoader(dataset, **dataloader_kwargs)
+    #=====================================init data_loader============================over
 
-    # self.model = model
-    # self.model.train()
+    prefetcher = DataPrefetcher(train_loader)  #据说是增加加载速度
+    max_iter = len(train_loader)
+
+    start_epoch = 0
+    max_epoch = 300
+    no_aug_epochs=15
+    from utils import LRScheduler
+    lr_scheduler = LRScheduler(
+        "yoloxwarmcos",
+        lr,
+        max_iter,
+        max_epoch,
+        warmup_epochs=5,
+        warmup_lr_start=0,
+        no_aug_epochs=no_aug_epochs,
+        min_lr_ratio=0.05,
+    )
+    
+    model.train()
 
     # self.evaluator = self.exp.get_evaluator(
     #     batch_size=self.args.batch_size, is_distributed=self.is_distributed
     # )
-    # # Tensorboard logger
-    # if self.rank == 0:
-    #     self.tblogger = SummaryWriter(self.file_name)
 
-    # logger.info("Training start...")
-    # logger.info("\n{}".format(model))
+    for epoch in range(start_epoch, max_epoch):
+        #self.before_epoch()
+        if epoch + 1 == max_epoch - no_aug_epochs:
+            train_loader.close_mosaic()
+            model.head.use_l1 = True
+            eval_interval = 1
+
+        #self.train_in_iter()
+            #self.before_iter()
+            #pass
+        
+            #self.train_one_iter()
+        iter_start_time = time.time()
+        inps, targets = prefetcher.next()
+        print("inps:",inps.shape)
+        print("targets:",targets.shape)
+
+            #self.after_iter()
+
+
+
+        #self.after_epoch()
+        exit(0)
+
+    
+    #self.after_train()
