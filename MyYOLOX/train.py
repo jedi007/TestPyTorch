@@ -64,8 +64,8 @@ if __name__ == "__main__":
     # )
     
     dataset = COCODataset(
-        data_dir="data_dir",
-        json_file="instances_train2017.json",
+        data_dir="D:\work\Study\Data\COCO2017",
+        json_file="instances_val2017.json", #"instances_train2017.json"  为运行研究方便改动val，真实训练该启用tain
         name="train2017",
         img_size=(416, 416),
         preproc=TrainTransform(max_labels=50),
