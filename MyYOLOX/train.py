@@ -20,6 +20,15 @@ from data.samplers import InfiniteSampler,YoloBatchSampler
 from data.dataloading import DataLoader,worker_init_reset_seed
 from data.data_prefetcher import DataPrefetcher
 
+input_size = (416,416)
+def preprocess(inputs, targets, tsize):
+    scale = tsize[0] / input_size[0]
+    if scale != 1:
+        inputs = nn.functional.interpolate(
+            inputs, size=tsize, mode="bilinear", align_corners=False
+        )
+        targets[..., 1:] = targets[..., 1:] * scale
+    return inputs, targets
 
 if __name__ == "__main__":
     #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -116,6 +125,8 @@ if __name__ == "__main__":
     #     batch_size=self.args.batch_size, is_distributed=self.is_distributed
     # )
 
+    fp16 = False
+    data_type = torch.float16 if fp16 else torch.float32
     for epoch in range(start_epoch, max_epoch):
         #self.before_epoch()
         if epoch + 1 == max_epoch - no_aug_epochs:
@@ -130,6 +141,13 @@ if __name__ == "__main__":
             #self.train_one_iter()
         iter_start_time = time.time()
         inps, targets = prefetcher.next()
+        print("inps:",inps.shape)
+        print("targets:",targets.shape)
+        inps = inps.to(data_type)
+        targets = targets.to(data_type)
+        targets.requires_grad = False
+
+        inps, targets = preprocess(inps, targets, (640, 640))
         print("inps:",inps.shape)
         print("targets:",targets.shape)
 
