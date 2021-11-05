@@ -66,22 +66,22 @@ if __name__ == '__main__':
 
     net = Net()
 
-    img = cv2.imread('D:/TestData/index1.png',cv2.IMREAD_GRAYSCALE)
+    # img = cv2.imread('D:/TestData/index1.png',cv2.IMREAD_GRAYSCALE)
 
-    print(img.shape)
+    # print(img.shape)
 
-    img_tensor = torch.tensor(img)
+    # img_tensor = torch.tensor(img)
 
 
-    print(img_tensor.shape)
+    # print(img_tensor.shape)
 
     
-    tensor_img = torch.tensor(img).view(1,1,28,28)
+    # tensor_img = torch.tensor(img).view(1,1,28,28)
 
-    outputs = net(tensor_img)
+    # outputs = net(tensor_img)
 
-    print( outputs )
-    exit(0)
+    # print( outputs )
+    # exit(0)
 
 
 
@@ -98,8 +98,8 @@ if __name__ == '__main__':
             # zero the parameter gradients
             optimizer.zero_grad()
 
-            print( inputs.shape )
-            print( type(inputs) )
+            #print( inputs.shape )
+            #print( type(inputs) )
             # forward + backward + optimize
             outputs = net(inputs)
             loss = criterion(outputs, labels)

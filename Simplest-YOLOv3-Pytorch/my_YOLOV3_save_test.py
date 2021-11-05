@@ -1,50 +1,9 @@
 import os
 import json
-import time
 
 import torch
-import cv2
-import numpy as np
-from matplotlib import pyplot as plt
 
-from build_utils import img_utils, torch_utils, utils
 from samplest_yolov3 import YOLOv3Model
-from draw_box_utils import draw_box
-
-import cv2
-
-
-import queue, threading, time
-
-# bufferless VideoCapture
-class VideoCapture:
-
-  def __init__(self, name):
-    self.cap = cv2.VideoCapture(name)
-    self.q = queue.Queue()
-    t = threading.Thread(target=self._reader)
-    t.daemon = True
-    t.start()
-
-  # read frames as soon as they are available, keeping only most recent one
-  def _reader(self):
-    while True:
-      ret, frame = self.cap.read()
-      if not ret:
-        break
-      if not self.q.empty():
-        try:
-          self.q.get_nowait()   # discard previous (unprocessed) frame
-        except queue.Empty:
-          pass
-      self.q.put(frame)
-
-  def read(self):
-    return self.q.get()
-
-
-#获取视频设备/从视频文件中读取视频帧
-cap = cv2.VideoCapture(0)
 
 def main():
     img_size = 512  # 必须是32的整数倍 [416, 512, 608]
@@ -61,7 +20,7 @@ def main():
     input_size = (img_size, img_size)
 
     #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cuda:0")
+    device = torch.device("cpu")
     print("device: ",device)
 
     model = YOLOv3Model()
@@ -75,7 +34,7 @@ def main():
     img = torch.ones((1, 3, img_size, img_size), device=device)
 
     net = torch.jit.trace(model, img)
-    net.save('D:/TestData/my_yolov3_jit_cuda2.pt')
+    net.save('D:/TestData/my_yolov3_jit_cuda3.pt')
     # pred=net(img)
     
     # print( "pred.shape: ", pred.shape )
