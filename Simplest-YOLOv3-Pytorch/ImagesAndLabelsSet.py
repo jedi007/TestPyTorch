@@ -335,6 +335,10 @@ if __name__ == '__main__':
                                                    collate_fn=train_dataset.collate_fn)
 
     for i, (imgs, targets, paths, _, _) in enumerate(train_dataloader):
+        print("targets: ",targets.shape)
+        print("targets: ",targets)
+
+
         for i in range(4):
             img_o = imgs[i]
 
