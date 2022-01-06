@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pylab
 pylab.rcParams['figure.figsize'] = (8.0, 10.0)
 
-dataDir='D:/work/Study/Data/COCO2017/coco'
+dataDir='C:/COCO'
 dataType='val2017'
 annFile='{}/annotations/instances_{}.json'.format(dataDir,dataType)
 # 初始化标注数据的 COCO api 

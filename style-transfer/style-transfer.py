@@ -44,19 +44,14 @@ def image_loader(image_name):
     image = loader(image).unsqueeze(0)
     print("image: ",image.shape)
     return image.to(device, torch.float)
-style_img = image_loader("./data/source/style.jpg")
 
-
-
+style_img = image_loader("../data/source/style.jpg")
 plt.figure()
 imshow(style_img, title='Style Image')
 
-
-
-content_img = image_loader("./data/source/content.jpg")
+content_img = image_loader("../data/source/content.jpg")
 plt.figure()
 imshow(content_img, title='Content Image')
-
 
 assert style_img.size() == content_img.size(), \
     "we need to import style and content images of the same size"
