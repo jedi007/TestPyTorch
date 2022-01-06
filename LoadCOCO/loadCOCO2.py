@@ -4,14 +4,14 @@ import skimage.io as io
 import matplotlib.pyplot as plt
 import pylab
  
-path = r'D:/work/Study/Data/COCO2017/coco/annotations/instances_train2017.json'
+path = r'C:/COCO/annotations/instances_train2017.json'
 coco = COCO(path)#1.读文件
  
 def showImage(imgIds):
     IDs = coco.getImgIds(imgIds)#2.获取ID
     imgs = coco.loadImgs(IDs)[0]#3.根据ID读图，返回list
     print(imgs)
-    imgFile = r'D:/work/Study/Data/COCO2017/coco/images/train2017/'
+    imgFile = r'C:/COCO/images/train2017/'
     imgURL = imgFile + imgs['file_name']
     I = io.imread(imgURL)#4.读图
     plt.imshow(I)
