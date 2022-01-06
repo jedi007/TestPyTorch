@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
  
 import torchvision.transforms as transforms
 import torchvision.models as models
+import torchvision
  
 import copy
 
@@ -35,7 +36,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 imsize = 512 if torch.cuda.is_available() else 128  # use small size if no gpu
  
 loader = transforms.Compose([
-    transforms.Resize(imsize),  # scale imported image
+    transforms.Scale([imsize,imsize]),  # scale imported image
     transforms.ToTensor()])  # transform it into a torch tensor
  
 def image_loader(image_name):
@@ -45,11 +46,11 @@ def image_loader(image_name):
     print("image: ",image.shape)
     return image.to(device, torch.float)
 
-style_img = image_loader("../data/source/style.jpg")
+style_img = image_loader("D:\TestData\style-transfer\style\style_dm_4.jpeg")
 plt.figure()
 imshow(style_img, title='Style Image')
 
-content_img = image_loader("../data/source/content.jpg")
+content_img = image_loader("D:\TestData\\test.jpg")
 plt.figure()
 imshow(content_img, title='Content Image')
 
@@ -191,12 +192,12 @@ imshow(input_img, title='Input Image')
 
 def get_input_optimizer(input_img):
     # 此行显示输入是需要渐变的参数
-    optimizer = optim.LBFGS([input_img.requires_grad_()])
+    optimizer = optim.LBFGS([input_img.requires_grad_()],lr=0.1)
     return optimizer
 
 
 def run_style_transfer(cnn, normalization_mean, normalization_std,
-                       content_img, style_img, input_img, num_steps=300,
+                       content_img, style_img, input_img, num_steps=1500,
                        style_weight=1000000, content_weight=1):
     """Run the style transfer."""
     print('Building the style transfer model..')
@@ -233,7 +234,9 @@ def run_style_transfer(cnn, normalization_mean, normalization_std,
                 print("run {}:".format(run))
                 print('Style Loss : {:4f} Content Loss: {:4f}'.format(
                     style_score.item(), content_score.item()))
-                print()
+                
+                torchvision.utils.save_image(input_img, f'D:/TestData/style-transfer/output-{run[0]}-{style_score}-{content_score}.jpg', padding=0, normalize=True)
+
  
             return style_score + content_score
  
