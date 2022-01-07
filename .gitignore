@@ -6,3 +6,4 @@ logs
 runs
 *.pt
 *.pth
+*.pyc

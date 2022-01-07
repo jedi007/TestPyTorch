@@ -167,27 +167,47 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         return len(self.img_files)
 
     def __getitem__(self, index):
-        # load image
-        img, (h0, w0), (h, w) = load_image(self, index)
+        #hyp = self.hyp
+        self.mosaic = True
+        self.augment = False
+        if self.mosaic:
+            # load mosaic
+            img, labels = load_mosaic(self, index)
+            shapes = None
+        else:
+            # load image
+            img, (h0, w0), (h, w) = load_image(self, index)
 
-        # letterbox
-        shape = self.img_size  # final letterboxed shape
-        img, ratio, pad = letterbox(img, shape, auto=False, scale_up=False)
-        shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
+            # letterbox
+            shape = self.img_size  # final letterboxed shape
+            img, ratio, pad = letterbox(img, shape, auto=False, scale_up=self.augment)
+            shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
 
-        # load labels
-        labels = []
-        x = self.labels[index]
-        if x.size > 0:
-            # Normalized xywh to pixel xyxy format
-            labels = x.copy()  # label: class, x, y, w, h
-            labels[:, 1] = ratio[0] * w * (x[:, 1] - x[:, 3] / 2) + pad[0]  # pad width
-            labels[:, 2] = ratio[1] * h * (x[:, 2] - x[:, 4] / 2) + pad[1]  # pad height
-            labels[:, 3] = ratio[0] * w * (x[:, 1] + x[:, 3] / 2) + pad[0]
-            labels[:, 4] = ratio[1] * h * (x[:, 2] + x[:, 4] / 2) + pad[1]
+            # load labels
+            labels = []
+            x = self.labels[index]
+            if x.size > 0:
+                # Normalized xywh to pixel xyxy format
+                labels = x.copy()  # label: class, x, y, w, h
+                labels[:, 1] = ratio[0] * w * (x[:, 1] - x[:, 3] / 2) + pad[0]  # pad width
+                labels[:, 2] = ratio[1] * h * (x[:, 2] - x[:, 4] / 2) + pad[1]  # pad height
+                labels[:, 3] = ratio[0] * w * (x[:, 1] + x[:, 3] / 2) + pad[0]
+                labels[:, 4] = ratio[1] * h * (x[:, 2] + x[:, 4] / 2) + pad[1]
 
-        label_number = len(labels)  # number of labels
-        if label_number:
+        if self.augment:
+            # Augment imagespace
+            if not self.mosaic:
+                img, labels = random_affine(img, labels,
+                                            degrees=0.,
+                                            translate=0.,
+                                            scale=0.,
+                                            shear=0.)
+
+            # Augment colorspace
+            # augment_hsv(img, h_gain=hyp["hsv_h"], s_gain=hyp["hsv_s"], v_gain=hyp["hsv_v"])
+
+        nL = len(labels)  # number of labels
+        if nL:
             # convert xyxy to xywh
             labels[:, 1:5] = xyxy2xywh(labels[:, 1:5])
 
@@ -195,8 +215,23 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
             labels[:, [2, 4]] /= img.shape[0]  # height
             labels[:, [1, 3]] /= img.shape[1]  # width
 
-        labels_out = torch.zeros((label_number, 6))  # nL: number of labels
-        if label_number:
+        # if self.augment:
+        #     # random left-right flip
+        #     lr_flip = True  # 随机水平翻转
+        #     if lr_flip and random.random() < 0.5:
+        #         img = np.fliplr(img)
+        #         if nL:
+        #             labels[:, 1] = 1 - labels[:, 1]  # 1 - x_center
+
+            # random up-down flip
+            ud_flip = False
+            if ud_flip and random.random() < 0.5:
+                img = np.flipud(img)
+                if nL:
+                    labels[:, 2] = 1 - labels[:, 2]  # 1 - y_center
+
+        labels_out = torch.zeros((nL, 6))  # nL: number of labels
+        if nL:
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert BGR to RGB, and HWC to CHW(3x512x512)
@@ -252,6 +287,163 @@ def load_image(self, index):
         return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
     else:
         return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
+
+def load_mosaic(self, index):
+    """
+    将四张图片拼接在一张马赛克图像中
+    :param self:
+    :param index: 需要获取的图像索引
+    :return:
+    """
+    # loads images in a mosaic
+
+    labels4 = []  # 拼接图像的label信息
+    s = self.img_size
+    # 随机初始化拼接图像的中心点坐标
+    xc, yc = [int(random.uniform(s * 0.5, s * 1.5)) for _ in range(2)]  # mosaic center x, y
+    # 从dataset中随机寻找三张图像进行拼接
+    indices = [index] + [random.randint(0, len(self.labels) - 1) for _ in range(3)]  # 3 additional image indices
+    # 遍历四张图像进行拼接
+    for i, index in enumerate(indices):
+        # load image
+        img, _, (h, w) = load_image(self, index)
+
+        # place img in img4
+        if i == 0:  # top left
+            # 创建马赛克图像
+            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            # 计算马赛克图像中的坐标信息(将图像填充到马赛克图像中)
+            x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
+            # 计算截取的图像区域信息(以xc,yc为第一张图像的右下角坐标填充到马赛克图像中，丢弃越界的区域)
+            x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
+        elif i == 1:  # top right
+            # 计算马赛克图像中的坐标信息(将图像填充到马赛克图像中)
+            x1a, y1a, x2a, y2a = xc, max(yc - h, 0), min(xc + w, s * 2), yc
+            # 计算截取的图像区域信息(以xc,yc为第二张图像的左下角坐标填充到马赛克图像中，丢弃越界的区域)
+            x1b, y1b, x2b, y2b = 0, h - (y2a - y1a), min(w, x2a - x1a), h
+        elif i == 2:  # bottom left
+            # 计算马赛克图像中的坐标信息(将图像填充到马赛克图像中)
+            x1a, y1a, x2a, y2a = max(xc - w, 0), yc, xc, min(s * 2, yc + h)
+            # 计算截取的图像区域信息(以xc,yc为第三张图像的右上角坐标填充到马赛克图像中，丢弃越界的区域)
+            x1b, y1b, x2b, y2b = w - (x2a - x1a), 0, max(xc, w), min(y2a - y1a, h)
+        elif i == 3:  # bottom right
+            # 计算马赛克图像中的坐标信息(将图像填充到马赛克图像中)
+            x1a, y1a, x2a, y2a = xc, yc, min(xc + w, s * 2), min(s * 2, yc + h)
+            # 计算截取的图像区域信息(以xc,yc为第四张图像的左上角坐标填充到马赛克图像中，丢弃越界的区域)
+            x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
+
+        # 将截取的图像区域填充到马赛克图像的相应位置
+        img4[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
+        # 计算pad(图像边界与马赛克边界的距离，越界的情况为负值)
+        padw = x1a - x1b
+        padh = y1a - y1b
+
+        # Labels 获取对应拼接图像的labels信息
+        # [class_index, x_center, y_center, w, h]
+        x = self.labels[index]
+        labels = x.copy()  # 深拷贝，防止修改原数据
+        if x.size > 0:  # Normalized xywh to pixel xyxy format
+            # 计算标注数据在马赛克图像中的坐标(绝对坐标)
+            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padw   # xmin
+            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + padh   # ymin
+            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padw   # xmax
+            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + padh   # ymax
+        labels4.append(labels)
+
+    # Concat/clip labels
+    if len(labels4):
+        labels4 = np.concatenate(labels4, 0)
+        # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
+        np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
+
+    #cv2.imshow("img4",img4)
+
+
+    # Augment
+    # 随机旋转，缩放，平移以及错切
+    img4, labels4 = random_affine(img4, labels4,
+                                  degrees=0.,
+                                  translate=0.,
+                                  scale=0.,
+                                  shear=0.,
+                                  border=-s // 2)  # border to remove
+
+    #cv2.imshow("img4-2",img4)
+    #cv2.waitKey(99999999)
+    #exit(0)
+
+
+    return img4, labels4
+
+def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, border=0):
+    """随机旋转，缩放，平移以及错切"""
+    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
+    # https://medium.com/uruvideo/dataset-augmentation-with-random-homographies-a8f4b44830d4
+    # targets = [cls, xyxy]
+
+    # 给定的输入图像的尺寸(416/512/640)，等于img4.shape / 2
+    height = img.shape[0] + border * 2
+    width = img.shape[1] + border * 2
+
+    # Rotation and Scale
+    # 生成旋转以及缩放矩阵
+    R = np.eye(3)  # 生成对角阵
+    a = random.uniform(-degrees, degrees)  # 随机旋转角度
+    s = random.uniform(1 - scale, 1 + scale)  # 随机缩放因子
+    R[:2] = cv2.getRotationMatrix2D(angle=a, center=(img.shape[1] / 2, img.shape[0] / 2), scale=s)
+
+    # Translation
+    # 生成平移矩阵
+    T = np.eye(3)
+    T[0, 2] = random.uniform(-translate, translate) * img.shape[0] + border  # x translation (pixels)
+    T[1, 2] = random.uniform(-translate, translate) * img.shape[1] + border  # y translation (pixels)
+
+    # Shear
+    # 生成错切矩阵
+    S = np.eye(3)
+    S[0, 1] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
+    S[1, 0] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
+
+    # Combined rotation matrix
+    M = S @ T @ R  # ORDER IS IMPORTANT HERE!!
+    if (border != 0) or (M != np.eye(3)).any():  # image changed
+        img = cv2.warpAffine(img, M[:2], dsize=(width, height), flags=cv2.INTER_LINEAR, borderValue=(114, 114, 114))
+
+    # Transform label coordinates
+    n = len(targets)
+    if n:
+        # warp points
+        xy = np.ones((n * 4, 3))
+        xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
+        # [4*n, 3] -> [n, 8]
+        xy = (xy @ M.T)[:, :2].reshape(n, 8)
+
+        # create new boxes
+        # 对transform后的bbox进行修正(假设变换后的bbox变成了菱形，此时要修正成矩形)
+        x = xy[:, [0, 2, 4, 6]]  # [n, 4]
+        y = xy[:, [1, 3, 5, 7]]  # [n, 4]
+        xy = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T  # [n, 4]
+
+        # reject warped points outside of image
+        # 对坐标进行裁剪，防止越界
+        xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
+        xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
+        w = xy[:, 2] - xy[:, 0]
+        h = xy[:, 3] - xy[:, 1]
+
+        # 计算调整后的每个box的面积
+        area = w * h
+        # 计算调整前的每个box的面积
+        area0 = (targets[:, 3] - targets[:, 1]) * (targets[:, 4] - targets[:, 2])
+        # 计算每个box的比例
+        ar = np.maximum(w / (h + 1e-16), h / (w + 1e-16))  # aspect ratio
+        # 选取长宽大于4个像素，且调整前后面积比例大于0.2，且比例小于10的box
+        i = (w > 4) & (h > 4) & (area / (area0 * s + 1e-16) > 0.2) & (ar < 10)
+
+        targets = targets[i]
+        targets[:, 1:5] = xy[i]
+
+    return img, targets
 
 def letterbox(img: np.ndarray,
               new_shape=(416, 416),
