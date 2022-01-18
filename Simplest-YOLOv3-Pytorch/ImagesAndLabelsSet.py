@@ -300,12 +300,15 @@ def load_mosaic(self, index):
     """
     # loads images in a mosaic
 
-    labels4 = []  # 拼接图像的label信息
+    print("func: ",sys._getframe().f_code.co_name)
+
+    labels4, segments4 = [], []  # 拼接图像的label信息
     s = self.img_size
     # 随机初始化拼接图像的中心点坐标
     xc, yc = [int(random.uniform(s * 0.5, s * 1.5)) for _ in range(2)]  # mosaic center x, y
     # 从dataset中随机寻找三张图像进行拼接
     indices = [index] + [random.randint(0, len(self.labels) - 1) for _ in range(3)]  # 3 additional image indices
+
     # 遍历四张图像进行拼接
     for i, index in enumerate(indices):
         # load image
@@ -364,16 +367,25 @@ def load_mosaic(self, index):
 
     # Augment
     # 随机旋转，缩放，平移以及错切
-    img4, labels4 = random_affine(img4, labels4,
-                                  degrees=0.,
-                                  translate=0.1,
-                                  scale=0.,
-                                  shear=0.,
-                                  border=-s // 2)  # border to remove
+    # img4, labels4 = random_affine(img4, labels4,
+    #                               degrees=0.,
+    #                               translate=0.1,
+    #                               scale=0.,
+    #                               shear=0.,
+    #                               border=-s // 2)  # border to remove
+    
+    #cv2.imshow("before: ",img4)
 
-    #cv2.imshow("img4-2",img4)
-    #cv2.waitKey(10000)
-    #exit(0)
+    img4, labels4 = random_perspective(img4, labels4, segments4,
+                                degrees=0.,
+                                translate=0.1,
+                                scale=0.,
+                                shear=0.,
+                                perspective=0.,
+                                border=(-256,-256))  # border to remove
+
+    #cv2.imshow("after: ",img4)
+    #cv2.waitKey(99999999)
 
 
     return img4, labels4
@@ -388,6 +400,7 @@ def load_mosaic2(self, index):
     """
     # loads images in a mosaic
     print("func: ",sys._getframe().f_code.co_name)
+    print("index: ",index)
 
     labels4, segments4 = [], []
     s = self.img_size
@@ -438,6 +451,8 @@ def load_mosaic2(self, index):
     #                             shear=0.,
     #                             border=-s // 2)  # border to remove
 
+    # cv2.imshow("before: ",img4)
+    
     img4, labels4 = random_perspective(img4, labels4, segments4,
                                     degrees=0.,
                                     translate=0.5+0.1,
@@ -445,6 +460,9 @@ def load_mosaic2(self, index):
                                     shear=0.,
                                     perspective=0.,
                                     border=(-256,-256))  # border to remove
+    
+    # cv2.imshow("after: ",img4)
+    # cv2.waitKey(99999999)
 
 
     return img4, labels4
@@ -459,7 +477,7 @@ def imshow(img):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=30)
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--cfg', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/my_yolov3.cfg', help="*.cfg path")
     parser.add_argument('--data', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_data.data', help='*.data path')
     parser.add_argument('--hyp', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/hyp.yaml', help='hyperparameters path')
@@ -468,13 +486,15 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
+    print("opt: ",opt)
+
     train_path = "D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_train_data.txt"
 
 
-    train_dataset = ImagesAndLabelsSet(train_path, 512, batch_size=4 )
+    train_dataset = ImagesAndLabelsSet(train_path, 512, batch_size=opt.batch_size )
 
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
-                                                   batch_size=4,
+                                                   batch_size=opt.batch_size,
                                                    num_workers=1,
                                                    # Shuffle=True unless rectangular training is used
                                                    shuffle= False,
@@ -486,7 +506,7 @@ if __name__ == '__main__':
         print("targets: ",targets)
 
 
-        for i in range(4):
+        for i in range(opt.batch_size):
             img_o = imgs[i]
 
             target = targets[targets[:,0]==i]
