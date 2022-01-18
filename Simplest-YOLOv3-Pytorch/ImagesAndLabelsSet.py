@@ -421,11 +421,6 @@ def load_mosaic2(self, index):
         segments4.extend(segments)
 
 
-    # cv2.imshow("img4  test",img4)
-    # cv2.waitKey(0)
-    # exit(0)
-
-
     # Concat/clip labels
     labels4 = np.concatenate(labels4, 0)
 
