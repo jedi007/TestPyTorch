@@ -191,8 +191,7 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
         if perspective:
             im = cv2.warpPerspective(im, M, dsize=(width, height), borderValue=(114, 114, 114))
         else:  # affine
-            #im = cv2.warpAffine(im, M[:2], dsize=(width, height), borderValue=(114, 114, 114))
-            im = cv2.warpAffine(im, M[:2], dsize=(width, height), flags=cv2.INTER_LINEAR, borderValue=(114, 114, 114))
+            im = cv2.warpAffine(im, M[:2], dsize=(width, height), borderValue=(114, 114, 114))
 
     # Visualize
     # import matplotlib.pyplot as plt
