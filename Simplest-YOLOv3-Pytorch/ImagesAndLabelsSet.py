@@ -64,6 +64,7 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         self.img_number = img_files_number  # number of images 图像总数目
         self.batch_index = batch_index  # batch index of image 记录哪些图片属于哪个batch
         self.img_size = img_size  # 这里设置的是预处理后输出的图片尺寸
+        self.mosaic_border = [-img_size // 2, -img_size // 2]
 
         # Define labels
         # 遍历设置图像对应的label路径
@@ -538,7 +539,7 @@ def load_mosaic9(self, index):
                                         scale=0.,
                                         shear=0.,
                                         perspective=0.,
-                                        border=(-s,-s))  # border to remove
+                                        border=[x - int(s/2) for x in self.mosaic_border])  # border to remove
 
     cv2.imshow('img9 1', img9)
     cv2.waitKey(0)
