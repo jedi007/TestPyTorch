@@ -175,7 +175,7 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         self.augment = False
         if self.mosaic:
             # load mosaic
-            img, labels = load_mosaic2(self, index)
+            img, labels = load_mosaic9(self, index)
             shapes = None
         else:
             # load image
@@ -455,7 +455,7 @@ def load_mosaic2(self, index):
     
     img4, labels4 = random_perspective(img4, labels4, segments4,
                                     degrees=0.,
-                                    translate=0.5+0.1,
+                                    translate=0.5 + 0.1,
                                     scale=0.,
                                     shear=0.,
                                     perspective=0.,
@@ -467,6 +467,84 @@ def load_mosaic2(self, index):
 
     return img4, labels4
 
+def load_mosaic9(self, index):
+    # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
+    labels9, segments9 = [], []
+    s = self.img_size
+    #indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
+    indices = [index] + [random.randint(0, len(self.labels) - 1) for _ in range(8)]  # 8 additional image indices
+    random.shuffle(indices)
+    for i, index in enumerate(indices):
+        # Load image
+        img, _, (h, w) = load_image(self, index)
+
+        # place img in img9
+        if i == 0:  # center
+            img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            h0, w0 = h, w
+            c = s, s, s + w, s + h  # xmin, ymin, xmax, ymax (base) coordinates
+        elif i == 1:  # top
+            c = s, s - h, s + w, s
+        elif i == 2:  # top right
+            c = s + wp, s - h, s + wp + w, s
+        elif i == 3:  # right
+            c = s + w0, s, s + w0 + w, s + h
+        elif i == 4:  # bottom right
+            c = s + w0, s + hp, s + w0 + w, s + hp + h
+        elif i == 5:  # bottom
+            c = s + w0 - w, s + h0, s + w0, s + h0 + h
+        elif i == 6:  # bottom left
+            c = s + w0 - wp - w, s + h0, s + w0 - wp, s + h0 + h
+        elif i == 7:  # left
+            c = s - w, s + h0 - h, s, s + h0
+        else:  # top left
+            c = s - w, s + h0 - hp - h, s, s + h0 - hp
+
+        padx, pady = c[:2]
+        x1, y1, x2, y2 = (max(x, 0) for x in c)  # allocate coords
+
+        # Labels
+        labels = self.labels[index].copy()
+        if labels.size:
+            labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padx, pady)  # normalized xywh to pixel xyxy format
+            #segments = [xyn2xy(x, w, h, padx, pady) for x in segments]
+        labels9.append(labels)
+
+        # Image
+        img9[y1:y2, x1:x2] = img[y1 - pady:, x1 - padx:]  # img9[ymin:ymax, xmin:xmax]
+        hp, wp = h, w  # height, width previous
+
+    # # Offset
+    # yc, xc = (int(random.uniform(0, s)) for _ in self.mosaic_border)  # mosaic center x, y
+    # img9 = img9[yc:yc + 2 * s, xc:xc + 2 * s]
+
+    # Concat/clip labels
+    labels9 = np.concatenate(labels9, 0)
+    # labels9[:, [1, 3]] -= xc
+    # labels9[:, [2, 4]] -= yc
+    # c = np.array([xc, yc])  # centers
+    # segments9 = [x - c for x in segments9]
+
+    for x in (labels9[:, 1:], *segments9):
+        np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
+    # img9, labels9 = replicate(img9, labels9)  # replicate
+
+    cv2.imshow('img9 0', img9)
+    cv2.waitKey(0)
+    # Augment
+    img9, labels9 = random_perspective(img9, labels9, segments9,
+                                        degrees=0.,
+                                        translate=1.1,
+                                        scale=0.,
+                                        shear=0.,
+                                        perspective=0.,
+                                        border=(-s,-s))  # border to remove
+
+    cv2.imshow('img9 1', img9)
+    cv2.waitKey(0)
+
+    return img9, labels9
+
 
 def imshow(img):
     #img = img / 2 + 0.5     # unnormalize
@@ -477,7 +555,7 @@ def imshow(img):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=30)
-    parser.add_argument('--batch-size', type=int, default=64)
+    parser.add_argument('--batch-size', type=int, default=4)
     parser.add_argument('--cfg', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/my_yolov3.cfg', help="*.cfg path")
     parser.add_argument('--data', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_data.data', help='*.data path')
     parser.add_argument('--hyp', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/hyp.yaml', help='hyperparameters path')
