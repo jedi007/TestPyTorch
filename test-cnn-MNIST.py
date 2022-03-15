@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
 
     net = Net()
-    net.cuda()
+    net.to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=0.01)

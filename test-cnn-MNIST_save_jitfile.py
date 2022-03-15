@@ -144,3 +144,7 @@ if __name__ == '__main__':
     net.save('D:/mnist_save_script_model.pt')
     output=net(torch.ones(1,1,28,28))
     print(output)
+
+
+    model_test_load = torch.jit.load('D:/mnist_save_script_model.pt')
+    print(model_test_load)

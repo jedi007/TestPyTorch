@@ -167,6 +167,8 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
             print("Saving labels to %s for faster future loading" % np_labels_path)
             np.save(np_labels_path, self.labels)  # save for next time
 
+        random.seed(0) # for reproduce
+
     def __len__(self):
         return len(self.img_files)
 
@@ -176,7 +178,7 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         self.augment = False
         if self.mosaic:
             # load mosaic
-            img, labels = load_mosaic9(self, index)
+            img, labels = load_mosaic2(self, index)
             shapes = None
         else:
             # load image
@@ -282,6 +284,7 @@ def load_image(self, index):
         path = self.img_files[index]
         img = cv2.imread(path)  # BGR
         assert img is not None, "Image Not Found " + path
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         h0, w0 = img.shape[:2]  # orig hw
         # img_size 设置的是预处理后输出的图片尺寸
         r = self.img_size / max(h0, w0)  # resize image to img_size
@@ -363,8 +366,6 @@ def load_mosaic(self, index):
         # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
         np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
-    #cv2.imshow("img4",img4)
-
 
     # Augment
     # 随机旋转，缩放，平移以及错切
@@ -380,14 +381,10 @@ def load_mosaic(self, index):
     img4, labels4 = random_perspective(img4, labels4, segments4,
                                 degrees=0.,
                                 translate=0.1,
-                                scale=0.,
+                                scale=0.5,
                                 shear=0.,
                                 perspective=0.,
                                 border=(-256,-256))  # border to remove
-
-    #cv2.imshow("after: ",img4)
-    #cv2.waitKey(99999999)
-
 
     return img4, labels4
 
@@ -407,26 +404,24 @@ def load_mosaic2(self, index):
     s = self.img_size
 
     indices = [index] + [random.randint(0, len(self.labels) - 1) for _ in range(3)]  # 3 additional image indices
+    indices = [index] + [101, 1001, 2002]
     
     for i, index in enumerate(indices):
         # load image
-        img, _, (h, w) = load_image(self, index)
+        im, _, (h, w) = load_image(self, index)
 
+        # place im in im4
         if i == 0:  # top left
-            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
-            padw = s - w
-            padh = s - h
+            im4 = np.full((s * 2, s * 2, im.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            padw, padh = s - w, s - h
         elif i == 1:  # top right
-            padw = s
-            padh = s - h
+            padw, padh = s, s - h
         elif i == 2:  # bottom left
-            padw = s - w
-            padh = s
-        else:         # bottom right
-            padw = s
-            padh = s
+            padw, padh = s - w, s
+        else:  # bottom right
+            padw, padh = s, s
         
-        img4[padh:padh+h, padw:padw+w] = img
+        im4[padh:padh + h, padw:padw + w] = im
 
         # Labels
         labels, segments = self.labels[index].copy(), self.segments[index].copy()
@@ -440,7 +435,8 @@ def load_mosaic2(self, index):
     # Concat/clip labels
     labels4 = np.concatenate(labels4, 0)
 
-    #cv2.imshow("img4",img4)
+    # cv2.imshow("im4__0",im4)
+    # cv2.waitKey(0)
 
 
     # Augment
@@ -454,19 +450,18 @@ def load_mosaic2(self, index):
 
     # cv2.imshow("before: ",img4)
     
-    img4, labels4 = random_perspective(img4, labels4, segments4,
+    im4, labels4 = random_perspective(im4, labels4, segments4,
                                     degrees=0.,
-                                    translate=0.5 + 0.1,
-                                    scale=0.,
+                                    translate=random.uniform(0, 0.17) + 0.33 + 0.1, #Analog random mosaic center: random.uniform(0, 0.2) + 0.3
+                                    scale=0.5,
                                     shear=0.,
-                                    perspective=0.,
+                                    perspective=0.0,
                                     border=(-256,-256))  # border to remove
     
-    # cv2.imshow("after: ",img4)
-    # cv2.waitKey(99999999)
+    # cv2.imshow("after: ",im4)
+    # cv2.waitKey(0)
 
-
-    return img4, labels4
+    return im4, labels4
 
 def load_mosaic9(self, index):
     # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
@@ -478,7 +473,6 @@ def load_mosaic9(self, index):
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
-
         # place img in img9
         if i == 0:  # center
             img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
@@ -556,7 +550,7 @@ def imshow(img):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=30)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--cfg', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/my_yolov3.cfg', help="*.cfg path")
     parser.add_argument('--data', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_data.data', help='*.data path')
     parser.add_argument('--hyp', type=str, default='D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/cfg/hyp.yaml', help='hyperparameters path')
@@ -567,7 +561,11 @@ if __name__ == '__main__':
 
     print("opt: ",opt)
 
-    train_path = "G:/AIData/MyYoloTestSource/data/my_train_data.txt"
+
+
+    train_path = "D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp/data/my_train_data.txt"
+    #train_path = "G:/AIData/MyYoloTestSource/data/my_train_data.txt"
+
 
 
     train_dataset = ImagesAndLabelsSet(train_path, 512, batch_size=opt.batch_size )
@@ -581,8 +579,8 @@ if __name__ == '__main__':
                                                    collate_fn=train_dataset.collate_fn)
 
     for i, (imgs, targets, paths, _, _) in enumerate(train_dataloader):
-        print("targets: ",targets.shape)
-        print("targets: ",targets)
+        #print("targets shape: ",targets.shape)
+        #print("targets: ",targets)
 
 
         for i in range(opt.batch_size):
@@ -596,7 +594,13 @@ if __name__ == '__main__':
             scores = torch.ones_like(target[:,1]).cpu().numpy()
             classes = target[:, 1].detach().cpu().numpy().astype(np.int) + 1
 
-            basepath = "G:/AIData/MyYoloTestSource"
+
+
+            basepath = "D:/pythonproject/Detection/UPUP/deep-learning-for-image-processing-master/pytorch_object_detection/yolov3_spp"
+            #basepath = "G:/AIData/MyYoloTestSource"
+            
+
+
             weights = basepath+"/weights/yolov3spp-voc-512.pt"  # 改成自己训练好的权重文件
             json_path = basepath+"/data/pascal_voc_classes.json"  # json标签文件
             assert os.path.exists(json_path), "json file {} dose not exist.".format(json_path)

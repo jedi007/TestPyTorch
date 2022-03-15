@@ -57,7 +57,7 @@ for i, sample in enumerate(voc_trainset, 1):
             show_image = show_object_rect(show_image, (x_min, y_min, x_max, y_max))
             show_image = show_object_name(show_image, object_name, (x_min, y_min))
 
-    cv2.imshow('image', show_image)
+    cv2.imshow('image', show_image[:,:,::-1]) #show_image[:,:,::-1] rgb bgr互换
     cv2.waitKey(0)
 
 

@@ -75,6 +75,8 @@ import torch.optim as optim
 if __name__ == '__main__':
     # get some random training images
     print(trainloader)
+    #dataloader本质上是一个可迭代对象，可以使用iter()进行访问，采用iter(dataloader)返回的是一个迭代器，然后可以使用next()访问。
+    #也可以使用enumerate(dataloader)的形式访问
     dataiter = iter(trainloader)
     images, labels = dataiter.next()
 
@@ -113,7 +115,7 @@ if __name__ == '__main__':
 
             # print statistics
             running_loss += loss.item()
-            if i % 2000 == 1999:    # print every 2000 mini-batches
+            if i % 200 == 199:    # print every 2000 mini-batches
                 print('[%d, %5d] loss: %.3f' %
                     (epoch + 1, i + 1, running_loss / 2000))
                 running_loss = 0.0
@@ -131,6 +133,8 @@ if __name__ == '__main__':
     print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
                               for j in range(4)))
 
+    
+    # 计算在测试集上的总正确率
     correct = 0
     total = 0
     with torch.no_grad():
@@ -141,11 +145,12 @@ if __name__ == '__main__':
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-
     print('Accuracy of the network on the 10000 test images: %d %%' % (
         100 * correct / total))
 
 
+    
+    # 计算在测试集上各个类别分别的正确率
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
     with torch.no_grad():
@@ -155,12 +160,10 @@ if __name__ == '__main__':
             outputs = net(inputs)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
-            for i in range(4):
+            for i in range(4): # 4 is test batchsize
                 label = labels[i]
                 class_correct[label] += c[i].item()
                 class_total[label] += 1
-
-
     for i in range(10):
         print('Accuracy of %5s : %2d %%' % (
             classes[i], 100 * class_correct[i] / class_total[i]))
