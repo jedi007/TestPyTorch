@@ -64,8 +64,8 @@ def show_results(img, xyxy, conf, landmarks, class_num):
     clors = [(255,0,0),(0,255,0),(0,0,255),(255,255,0),(0,255,255)]
 
     for i in range(5):
-        point_x = int(landmarks[2 * i] * w)
-        point_y = int(landmarks[2 * i + 1] * h)
+        point_x = int(landmarks[2 * i])
+        point_y = int(landmarks[2 * i + 1])
         cv2.circle(img, (point_x, point_y), tl+1, clors[i], -1)
 
     tf = max(tl - 1, 1)  # font thickness
@@ -120,8 +120,6 @@ def detect_one_frame(model, orgimg, device):
     dets = []
     # Process detections
     for i, det in enumerate(pred):  # detections per image
-        gn = torch.tensor(orgimg.shape)[[1, 0, 1, 0]].to(device)  # normalization gain whwh
-        gn_lks = torch.tensor(orgimg.shape)[[1, 0, 1, 0, 1, 0, 1, 0, 1, 0]].to(device)  # normalization gain landmarks
         if len(det):
             # Rescale boxes from img_size to im0 size
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], orgimg.shape).round()
@@ -136,7 +134,7 @@ def detect_one_frame(model, orgimg, device):
             for j in range(det.size()[0]):
                 xyxy = det[j, :4].view(-1).tolist()
                 conf = det[j, 4].cpu().numpy()
-                landmarks = (det[j, 5:15].view(1, 10) / gn_lks).view(-1).tolist()
+                landmarks = det[j, 5:15].view(-1).tolist()
                 class_num = det[j, 15].cpu().numpy()
                 orgimg = show_results(orgimg, xyxy, conf, landmarks, class_num)
     
@@ -151,12 +149,12 @@ def detect_VideoCapture(cap, model, device):
         if ret == True:
             # Run inference
             t0 = time.time()
-            img = detect_one_frame(model, frame, device)
+            detect_one_frame(model, frame, device)
             # Inference
             t1 = time_synchronized()
             print("one frame use time: ",t1 - t0)
 
-            cv2.imshow("VideoCapture", img)
+            cv2.imshow("VideoCapture", frame)
             
             #等待键盘事件，如果为q，退出
             key = cv2.waitKey(1)

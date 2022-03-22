@@ -22,8 +22,8 @@ from FaceNetCore.facenet import Facenet
 def demo_img(model_yolo5face, model_facenet, features_myface):
     print("demo_img")
 
-    #image_path = current_work_dir + '/data/images/test.jpg'
-    image_path = current_work_dir0 + '/Yolo5FaceCore/data/images/cocotest.jpg'
+    image_path = current_work_dir0 + '/Yolo5FaceCore/data/images/test.jpg'
+    # image_path = current_work_dir0 + '/Yolo5FaceCore/data/images/cocotest.jpg'
     
     #检测图片
     orgimg = cv2.imread(image_path)  # BGR
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     
 
 
-    # demo_img(model_yolo5face, model_facenet, features_myface)
+    demo_img(model_yolo5face, model_facenet, features_myface)
 
-    demo_VideoCapture(model_yolo5face, model_facenet, features_myface)
+    # demo_VideoCapture(model_yolo5face, model_facenet, features_myface)
 

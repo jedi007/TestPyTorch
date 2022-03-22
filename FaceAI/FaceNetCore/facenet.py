@@ -1,6 +1,6 @@
 import os
 current_work_dir2 = os.path.dirname(__file__)  # 当前文件所在的目录
-base_dir2 = "/".join(current_work_dir2.split("/")[0:-1])
+base_dir2 = "/".join(current_work_dir2.replace("\\","/").split("/")[0:-1])
 
 import sys
 sys.path.append(current_work_dir2)
@@ -25,7 +25,7 @@ class Facenet(object):
         #   训练好后logs文件夹下存在多个权值文件，选择验证集损失较低的即可。
         #   验证集损失较低不代表准确度较高，仅代表该权值在验证集上泛化性能较好。
         #--------------------------------------------------------------------------#
-        "model_path"    : "D:/TestCode/facenet-pytorch-main/model_data/facenet_inception_resnetv1.pth",
+        "model_path"    : current_work_dir2 + "/model_data/facenet_inception_resnetv1.pth",
         #--------------------------------------------------------------------------#
         #   输入图片的大小。
         #--------------------------------------------------------------------------#
