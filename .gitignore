@@ -1,4 +1,5 @@
 /data
+/wandb
 hymenoptera_data
 hymenoptera_data.zip
 savepath/*
@@ -6,5 +7,6 @@ logs
 runs
 *.pt
 *.pth
+*.h5
 *.pyc
 __pycache__
