@@ -10,3 +10,5 @@ runs
 *.h5
 *.pyc
 __pycache__
+/base/paddle/pets_Segmentation/annotations
+/base/paddle/pets_Segmentation/images
