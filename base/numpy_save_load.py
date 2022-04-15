@@ -70,6 +70,8 @@ np.set_printoptions(suppress=True)
 print(data.files)
 print(data['resnet_dict'])
 
+print("dict = ",type(data['resnet_dict'].item()))
+
 
 
 
