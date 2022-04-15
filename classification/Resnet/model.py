@@ -160,6 +160,10 @@ class ResNet(nn.Module):
 
         return x
 
+def resnet18(num_classes=1000, include_top=True):
+    # https://download.pytorch.org/models/resnet34-333f7ec4.pth
+    return ResNet(BasicBlock, [2, 2, 2, 2], num_classes=num_classes, include_top=include_top)
+
 
 def resnet34(num_classes=1000, include_top=True):
     # https://download.pytorch.org/models/resnet34-333f7ec4.pth

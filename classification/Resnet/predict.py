@@ -6,7 +6,7 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from model import resnet34
+from model import resnet18 as resnet
 
 
 def main():
@@ -39,10 +39,10 @@ def main():
     class_indict = json.load(json_file)
 
     # create model
-    model = resnet34(num_classes=5).to(device)
+    model = resnet(num_classes=5).to(device)
 
     # load model weights
-    weights_path = os.path.join(current_dir, "weights", "resNet34.pth")
+    weights_path = os.path.join(current_dir, "weights", "resNet18.pth")
     assert os.path.exists(weights_path), "file: '{}' dose not exist.".format(weights_path)
     model.load_state_dict(torch.load(weights_path, map_location=device))
 

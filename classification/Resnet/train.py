@@ -7,7 +7,7 @@ import torch.optim as optim
 from torchvision import transforms, datasets
 from tqdm import tqdm
 
-from model import resnet34
+from model import resnet18 as resnet
 
 
 def main():
@@ -60,10 +60,10 @@ def main():
     print("using {} images for training, {} images for validation.".format(train_num,
                                                                            val_num))
     
-    net = resnet34()
+    net = resnet()
     # load pretrain weights
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
-    model_weight_path = os.path.join(current_dir, "weights", "resnet34-pre.pth")
+    model_weight_path = os.path.join(current_dir, "weights", "resnet18-pre.pth")
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
     net.load_state_dict(torch.load(model_weight_path, map_location=device))
     # for param in net.parameters():
@@ -83,7 +83,7 @@ def main():
 
     epochs = 3
     best_acc = 0.0
-    save_path = os.path.join(current_dir, "weights", "resNet34.pth")
+    save_path = os.path.join(current_dir, "weights", "resNet18.pth")
     train_steps = len(train_loader)
     for epoch in range(epochs):
         # train
