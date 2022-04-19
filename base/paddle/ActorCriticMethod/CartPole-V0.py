@@ -14,7 +14,7 @@ env = gym.make("CartPole-v0")  ### 或者 env = gym.make("CartPole-v0").unwrappe
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 print("state_size: ",state_size)
-print("action_size: ",action_size)
+print("action_size: ",state_size)
 
 lr = 0.001
 
@@ -80,7 +80,7 @@ def trainIters(actor, critic, n_iters):
             action = dist.sample([1])
             next_state, reward, done, _ = env.step(action.cpu().squeeze(0).numpy()) 
 
-            log_prob = dist.log_prob(action);
+            log_prob = dist.log_prob(action)
             # entropy += dist.entropy().mean()
 
             log_probs.append(log_prob)
