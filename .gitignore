@@ -9,6 +9,12 @@ runs
 *.pth
 *.h5
 *.pyc
+*.npz
+*.npy
+*.pdparams
 __pycache__
 /base/paddle/pets_Segmentation/annotations
 /base/paddle/pets_Segmentation/images
+/base/paddle/pets_Segmentation/*.txt
+/base/paddle/OCR/data
+/base/paddle/OCR/output
