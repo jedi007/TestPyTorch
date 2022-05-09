@@ -90,7 +90,7 @@ from u_net import PetNet
 num_classes = 4
 network = PetNet(num_classes)
 model = paddle.Model(network)
-model.summary((-1, 3,) + IMAGE_SIZE)
+print(model.summary((-1, 3,) + IMAGE_SIZE))
 
 
 
@@ -107,7 +107,7 @@ model.prepare(optim, paddle.nn.CrossEntropyLoss(axis=1))
 model.fit(train_dataset, 
           val_dataset, 
           epochs=15, 
-          batch_size=32,
+          batch_size=4,
           verbose=1)
 
 

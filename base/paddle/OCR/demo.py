@@ -92,10 +92,10 @@ class Net(paddle.nn.Layer):
         # 定义全连接层，压缩并提取特征（可选）
         self.linear = paddle.nn.Linear(in_features=429,
                                    out_features=128)
-        # 定义RNN层来更好提取序列特征，此处为双向LSTM输出为2 x hidden_size，可尝试换成GRU等RNN结构
-        self.lstm = paddle.nn.LSTM(input_size=128,
-                               hidden_size=64,
-                               direction="bidirectional")
+        # # 定义RNN层来更好提取序列特征，此处为双向LSTM输出为2 x hidden_size，可尝试换成GRU等RNN结构
+        # self.lstm = paddle.nn.LSTM(input_size=128,
+        #                        hidden_size=64,
+        #                        direction="bidirectional")
         # 定义输出层，输出大小为分类数
         self.linear2 = paddle.nn.Linear(in_features=64 * 2,
                                     out_features=CLASSIFY_NUM)
@@ -117,8 +117,12 @@ class Net(paddle.nn.Layer):
         # 全连接 + ReLU
         x = self.linear(x)
         x = paddle.nn.functional.relu(x)
-        # 双向LSTM - [0]代表取双向结果，[1][0]代表forward结果,[1][1]代表backward结果，详细说明可在官方文档中搜索'LSTM'
-        x = self.lstm(x)[0]
+
+        # print("before lstm: ",x.shape)
+        # # 双向LSTM - [0]代表取双向结果，[1][0]代表forward结果,[1][1]代表backward结果，详细说明可在官方文档中搜索'LSTM'
+        # x = self.lstm(x)[0]
+        # print("after lstm: ",x.shape)
+        # exit(0)
         # 输出层 - Shape = (Batch Size, Max label len, Signal) 
         x = self.linear2(x)
 
