@@ -16,6 +16,7 @@ logging.getLogger().setLevel(logging.ERROR)
 
 # WandB – Import the wandb library
 import wandb
+# wandb --help   # 离线 wandb offline  # 在线 wandb online
 
 
 # 定义Convolutional Neural Network：
