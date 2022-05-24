@@ -203,11 +203,12 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
         if self.augment:
             # Augment imagespace
             if not self.mosaic:
-                img, labels = random_affine(img, labels,
-                                            degrees=0.,
-                                            translate=0.,
-                                            scale=0.,
-                                            shear=0.)
+                img, labels = random_perspective(img, labels, 
+                                    degrees=0.,
+                                    translate=0.1,
+                                    scale=0.5,
+                                    shear=0.,
+                                    perspective=0.0)  # border to remove
 
             # Augment colorspace
             # augment_hsv(img, h_gain=hyp["hsv_h"], s_gain=hyp["hsv_s"], v_gain=hyp["hsv_v"])
@@ -448,11 +449,11 @@ def load_mosaic2(self, index):
     #                             shear=0.,
     #                             border=-s // 2)  # border to remove
 
-    # cv2.imshow("before: ",img4)
+    # cv2.imshow("before: ",im4)
     
     im4, labels4 = random_perspective(im4, labels4, segments4,
                                     degrees=0.,
-                                    translate=random.uniform(0, 0.17) + 0.33 + 0.1, #Analog random mosaic center: random.uniform(0, 0.2) + 0.3
+                                    translate=0.1,
                                     scale=0.5,
                                     shear=0.,
                                     perspective=0.0,
