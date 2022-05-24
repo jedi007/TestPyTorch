@@ -175,7 +175,7 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
     def __getitem__(self, index):
         #hyp = self.hyp
         self.mosaic = True
-        self.augment = False
+        self.augment = True
         if self.mosaic:
             # load mosaic
             img, labels = load_mosaic2(self, index)
@@ -200,15 +200,12 @@ class ImagesAndLabelsSet(Dataset):  # for training/testing
                 labels[:, 3] = ratio[0] * w * (x[:, 1] + x[:, 3] / 2) + pad[0]
                 labels[:, 4] = ratio[1] * h * (x[:, 2] + x[:, 4] / 2) + pad[1]
 
-        if self.augment:
-            # Augment imagespace
-            if not self.mosaic:
-                img, labels = random_perspective(img, labels, 
-                                    degrees=0.,
-                                    translate=0.1,
-                                    scale=0.5,
-                                    shear=0.,
-                                    perspective=0.0)  # border to remove
+            img, labels = random_perspective(img, labels, 
+                                degrees=0.,
+                                translate=0.1,
+                                scale=0.5,
+                                shear=0.,
+                                perspective=0.0)  # border to remove
 
             # Augment colorspace
             # augment_hsv(img, h_gain=hyp["hsv_h"], s_gain=hyp["hsv_s"], v_gain=hyp["hsv_v"])
