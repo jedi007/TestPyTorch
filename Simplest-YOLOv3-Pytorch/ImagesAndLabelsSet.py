@@ -453,7 +453,7 @@ def load_mosaic2(self, index):
     
     im4, labels4 = random_perspective(im4, labels4, segments4,
                                     degrees=0.,
-                                    translate=0.1,
+                                    translate=0.5,
                                     scale=0.5,
                                     shear=0.,
                                     perspective=0.0,
