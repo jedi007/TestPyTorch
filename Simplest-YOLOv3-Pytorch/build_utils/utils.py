@@ -174,6 +174,8 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
     a = random.uniform(-degrees, degrees)
     # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
     s = random.uniform(1 - scale, 1 + scale)
+    s = 0.6
+    ts = min(s, 1.0)
     # s = 2 ** random.uniform(-scale, scale)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
@@ -181,13 +183,13 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
     # 注意实际计算时  相当于先做完平移， 再缩放
     # Center
     C = np.eye(3)
-    C[0, 2] = (width / s  - im.shape[1]) / 2 # x translation (pixels)
-    C[1, 2] = (height / s  - im.shape[0]) / 2 # y translation (pixels)
+    C[0, 2] = - im.shape[1] / 2 * ts # x translation (pixels)
+    C[1, 2] = - im.shape[0] / 2 * ts # y translation (pixels)
 
     # Translation
     T = np.eye(3)
-    T[0, 2] = random.uniform( - translate,  translate) * width  # x translation (pixels)
-    T[1, 2] = random.uniform( - translate,  translate) * height  # y translation (pixels)
+    T[0, 2] = random.uniform(0.5 - translate, 0.5 + translate) * width * ts # x translation (pixels)
+    T[1, 2] = random.uniform(0.5 - translate, 0.5 + translate) * height * ts # y translation (pixels)
 
 
     # Combined rotation matrix
