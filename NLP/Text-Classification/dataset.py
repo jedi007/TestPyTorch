@@ -12,24 +12,29 @@ import config
 class ImdbDataset(Dataset):
     def __init__(self,train=True):
         # super(ImdbDataset,self).__init__()
-        data_path = r"F:\AI\阶段9-人工智能NLP项目\第四天\代码\data\aclImdb"
-        data_path += r"\train" if train else r"\test"
-        self.total_path = []  #保存所有的文件路径
-        for temp_path in [r"\pos",r"\neg"]:
-            cur_path = data_path + temp_path
-            self.total_path += [os.path.join(cur_path,i) for i in os.listdir(cur_path) if i.endswith(".txt")]
+        # data_path = r"F:\AI\阶段9-人工智能NLP项目\第四天\代码\data\aclImdb"
+        # data_path += r"\train" if train else r"\test"
+        # self.total_path = []  #保存所有的文件路径
+        # for temp_path in [r"\pos",r"\neg"]:
+        #     cur_path = data_path + temp_path
+        #     self.total_path += [os.path.join(cur_path,i) for i in os.listdir(cur_path) if i.endswith(".txt")]
+        
+        self.reviews = ["ha ha he he hei hei ya", "good gooder goodest"]
+        self.labels = [0,1]
 
 
     def __getitem__(self, idx):
-        file = self.total_path[idx]
-        #with open(file, 'r', encoding='utf-8') as f:
-        review = utils.tokenlize(open(file, 'r', encoding='utf-8').read()) #评论
-        label = int(file.split("_")[-1].split(".")[0])
-        label = 0 if label <5 else 1
-        return review,label
+        # file = self.total_path[idx]
+        # #with open(file, 'r', encoding='utf-8') as f:
+        # review = utils.tokenlize(open(file, 'r', encoding='utf-8').read()) #评论
+        # label = int(file.split("_")[-1].split(".")[0])
+        # label = 0 if label <5 else 1
+        # return review,label
+        return [i for i in self.reviews[idx].split(" ") if len(i)>0], self.labels[idx]
 
     def __len__(self):
-        return len(self.total_path)
+        #return len(self.total_path)
+        return len(self.reviews)
 
 
 def collate_fn(batch):
