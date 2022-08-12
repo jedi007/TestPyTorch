@@ -34,7 +34,7 @@ class WordSequence:
         :return:
         """
         if min_count is not None:
-            self.count = {word:count for word,count in self.count.items() if count >= min_count}
+            self.count = {word:count for word,count in self.count.items() if count >= min_count} #将大于min词频的词进行统计
         if max_count is not None:
             self.count = {word:count for word,count in self.count.items() if count <= max_count}
         if max_features is not None:
@@ -72,17 +72,17 @@ class WordSequence:
         return len(self.dict)
 
 if __name__ == '__main__':
-    # sentences  = [["今天","天气","很","好"],
-    #               ["今天","去","吃","什么"]]
-    # ws = WordSequence()
-    # for sentence in sentences:
-    #     ws.fit(sentence)
-    # ws.build_vocab(min_count=1)
-    # print(ws.dict)
-    # ret = ws.transform(["好","好","好","好","好","好","好","热","呀"],max_len=3)
-    # print(ret)
-    # ret = ws.inverse_transform(ret)
-    # print(ret)
+    sentences  = [["今天","天气","很","好"],
+                  ["今天","去","吃","什么"]]
+    ws = WordSequence()
+    for sentence in sentences:
+        ws.fit(sentence)
+    ws.build_vocab(min_count=1)
+    print(ws.dict)
+    ret = ws.transform(["好","好","好","好","好","好","好","热","呀"],max_len=3)
+    print(ret)
+    ret = ws.inverse_transform(ret)
+    print(ret)
     pass
 
 

@@ -22,13 +22,13 @@ for m in model.parameters():
     m.data.fill_(0.1)
  
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1.0)
+optimizer = torch.optim.SGD(model.parameters(), lr=1000.0)
  
 model.train()
 # 模拟输入8个 sample，每个的大小是 10x10，
 # 值都初始化为1，让每次输出结果都固定，方便观察
-images = torch.ones(8, 3, 10, 10)
-targets = torch.ones(8, dtype=torch.long)
+images = torch.ones(8, 3, 10, 10)*0.1
+targets = torch.ones(8, dtype=torch.long)*10
  
 output = model(images)
 print(output.shape)
@@ -39,6 +39,7 @@ loss = criterion(output, targets)
 print(model.conv1.weight.grad)
 # None
 loss.backward()
+print("step grad")
 print(model.conv1.weight.grad[0][0][0])
 # tensor([-0.0782, -0.0842, -0.0782])
 # 通过一次反向传播，计算出网络参数的导数，
@@ -48,12 +49,14 @@ print(model.conv1.weight[0][0][0])
 # tensor([0.1000, 0.1000, 0.1000], grad_fn=<SelectBackward>)
 # 我们知道网络参数的值一开始都初始化为 0.1 的
  
+print("optimizer.step")
 optimizer.step()
 print(model.conv1.weight[0][0][0])
 # tensor([0.1782, 0.1842, 0.1782], grad_fn=<SelectBackward>)
 # 回想刚才我们设置 learning rate 为 1，这样，
 # 更新后的结果，正好是 (原始权重 - 求导结果) ！
  
+print("optimizer.zero_grad")
 optimizer.zero_grad()
 print(model.conv1.weight.grad[0][0][0])
 # tensor([0., 0., 0.])

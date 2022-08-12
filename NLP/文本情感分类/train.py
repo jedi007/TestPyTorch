@@ -9,7 +9,7 @@ import torch
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-model = ImdbModelGRU()
+model = ImdbModelTransformer() #ImdbModelGRU()
 model.to( device )
 optimizer = Adam(model.parameters())
 
