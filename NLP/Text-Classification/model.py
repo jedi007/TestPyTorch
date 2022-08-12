@@ -163,16 +163,15 @@ class ImdbModelGRU(nn.Module):
 
 
 class Positional_Encoding(nn.Module):
-    def __init__(self, embed, pad_size, dropout, device):
+    def __init__(self, embed, pad_size, dropout):
         super(Positional_Encoding, self).__init__()
-        self.device = device
         self.pe = torch.tensor([[pos / (10000.0 ** (i // 2 * 2.0 / embed)) for i in range(embed)] for pos in range(pad_size)])
         self.pe[:, 0::2] = np.sin(self.pe[:, 0::2])
         self.pe[:, 1::2] = np.cos(self.pe[:, 1::2])
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        out = x + nn.Parameter(self.pe, requires_grad=False).to(self.device)
+        out = x + nn.Parameter(self.pe, requires_grad=False).to(x.device)
         out = self.dropout(out)
         return out
 
@@ -184,7 +183,7 @@ class ImdbModelTransformer(nn.Module):
 
         self.embedding = nn.Embedding(num_embeddings=len(config.ws),embedding_dim=embedding_dim,padding_idx=config.ws.PAD)
 
-        self.postion_embedding = Positional_Encoding(embedding_dim, config.max_len, 0.5, torch.device("cuda:0"))
+        self.postion_embedding = Positional_Encoding(embedding_dim, config.max_len, dropout=0.5)
         
         #Transformer结构有两种：Encoder和Decoder，在文本分类中只使用到了Encoder，Decoder是生成式模型，主要用于自然语言生成的。
         encoder_layer = nn.TransformerEncoderLayer(d_model=embedding_dim, nhead=8, batch_first=True)
@@ -205,8 +204,9 @@ class ImdbModelTransformer(nn.Module):
         """
 
         input_embeded = self.embedding(input)
+        input_postioned = self.postion_embedding(input_embeded)
 
-        trans_res = self.trans_encode(input_embeded)
+        trans_res = self.trans_encode(input_postioned)
         # print("trans_res: ", trans_res.shape)  #torch.Size([2, 50, 200])  [batch_size,max_len,embedding_dim]
 
         input_embeded_viewed = trans_res.contiguous().view(trans_res.size(0),-1)

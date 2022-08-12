@@ -11,7 +11,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 model = ImdbModelTransformer() #ImdbModelGRU()
 model.to( device )
-optimizer = Adam(model.parameters())
+optimizer = Adam(model.parameters(),lr=1e-4*0.5)
 
 
 def train(epoch):
@@ -28,6 +28,6 @@ def train(epoch):
 
 
 if __name__ == '__main__':
-    for i in range(20):
+    for i in range(50):
         train(i)
 
