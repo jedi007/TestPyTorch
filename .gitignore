@@ -19,3 +19,4 @@ __pycache__
 /base/paddle/OCR/data
 /base/paddle/OCR/output
 /NLP/data
+/NLP/Transformer/dataset
