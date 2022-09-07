@@ -75,7 +75,10 @@ def finish_episode():
     rewards = (rewards - rewards.mean()) / (rewards.std() + eps)
 
     for (log_prob , value), r in zip(save_actions, rewards):
-        reward = r - value.item()
+        reward = r - value.item() # 这个value的意义是当前局面（state）的评分。但是在训练时还有另一层意义，这个值反应的是通过之前的学习，得到的该state下的评分。
+                                  # 这个r是当前action得到的实际得分，如果 r - value 大于0，则说明这次尝试的这个action在该局面（state）下，获得了超过以往的分数，
+                                  # 应该鼓励在实际对战中，遇到该局面(state)，提升进行该操作（action）的概率
+
         policy_loss.append(-log_prob * reward)  # reward 大于0，-log_prob函数曲线翻转，变成随x轴递减的曲线。此时对其求导，加上gradient. 
                                                 # 相当于调整f(x)=log_prob(x)中的x增大。 并且reward越大，gradient也越大，调整幅度也就越大
                                                 # 实际意义即是：该state下，执行该action的概率调大
