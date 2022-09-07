@@ -20,7 +20,8 @@ torch.manual_seed(1)
 
 state_space = env.observation_space.shape[0]
 action_space = env.action_space.n
-
+print("state_space: ", state_space)
+print("action_space: ", action_space)
 
 #Hyperparameters
 learning_rate = 0.01
@@ -75,7 +76,9 @@ def finish_episode():
 
     for (log_prob , value), r in zip(save_actions, rewards):
         reward = r - value.item()
-        policy_loss.append(-log_prob * reward)
+        policy_loss.append(-log_prob * reward)  # reward 大于0，-log_prob函数曲线翻转，变成随x轴递减的曲线。此时对其求导，加上gradient. 相当于调整f(x)=log_prob(x)中的x增大。 
+                                                # 实际意义即是：该state下，执行该action的概率调大
+                                                # 反之，reward 小于0时，在该state下，执行该action的概率调小
         value_loss.append(F.smooth_l1_loss(value, torch.tensor([r])))
 
     optimizer.zero_grad()
