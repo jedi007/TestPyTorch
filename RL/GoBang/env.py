@@ -62,39 +62,93 @@ class ENV():
     
     def checkwin(self, row: int, col: int):
         color = self.board[row][col]
-        count_l_r = 1
-        count_u_d = 1
-        count_lu_rd = 1
-        count_ru_ld = 1
-        for i in range(1,5):
-            if col - i >= 0:
-                if self.board[row][col - i] == color:
-                    count_l_r += 1
-            if col + i < self.block_size:
-                if self.board[row][col + i] == color:
-                    count_l_r += 1   
 
-            if row - i >= 0:
-                if self.board[row - i][col] == color:
-                    count_u_d += 1
-            if row + i < self.block_size:
-                if self.board[row + i][col] == color:
-                    count_u_d += 1
+        # 横向
+        score = 1
+        left = col
+        while True:
+            left -= 1
+            if left >= 0 and self.board[row][left] == color:
+                score += 1
+            else:
+                break
+        right = col
+        while True:
+            right += 1
+            if right < self.block_size and self.board[row][right] == color:
+                score += 1
+            else:
+                break
+        if score >=5:
+            self.done = True
+            return 
+        
+        # 纵向
+        score = 1
+        left = row
+        while True:
+            left -= 1
+            if left >= 0 and self.board[left][col] == color:
+                score += 1
+            else:
+                break
+        right = row
+        while True:
+            right += 1
+            if right < self.block_size and self.board[right][col] == color:
+                score += 1
+            else:
+                break
+        if score >=5:
+            self.done = True
+            return 
 
-            if col - i >= 0 and row - i >= 0:
-                if self.board[row - i][col - i] == color:
-                    count_lu_rd += 1
-            if col + i < self.block_size and row + i < self.block_size:
-                if self.board[row + i][col + i] == color:
-                    count_lu_rd += 1
+        # 左上==>右下
+        score = 1
+        r_left = row
+        c_left = col
+        while True:
+            r_left -= 1
+            c_left -= 1
+            if r_left >= 0 and c_left >= 0 and self.board[r_left][c_left] == color:
+                score += 1
+            else:
+                break
+        r_right = row
+        c_right = col
+        while True:
+            r_right += 1
+            c_right += 1
+            if r_right < self.block_size and c_right < self.block_size and self.board[r_right][c_right] == color:
+                score += 1
+            else:
+                break
+        if score >=5:
+            self.done = True
+            return 
 
-            if row - i >= 0 and col + i < self.block_size:
-                if self.board[row - i][col + i] == color:
-                    count_ru_ld += 1   
-            if row + i < self.block_size and col - i >= 0:
-                if self.board[row + i][col - i] == color:
-                    count_ru_ld += 1  
-
-        self.done = count_l_r >= 5 or  count_u_d >= 5 or count_lu_rd >= 5 or count_ru_ld >= 5
+        # 右上==>左下
+        score = 1
+        r_left = row
+        c_left = col
+        while True:
+            r_left -= 1
+            c_left += 1
+            if r_left >= 0 and c_left < self.block_size and self.board[r_left][c_left] == color:
+                score += 1
+            else:
+                break
+        r_right = row
+        c_right = col
+        while True:
+            r_right += 1
+            c_right -= 1
+            if r_right < self.block_size and c_right >= 0 and self.board[r_right][c_right] == color:
+                score += 1
+            else:
+                break
+        if score >=5:
+            self.done = True
+            return 
         
 
