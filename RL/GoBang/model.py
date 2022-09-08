@@ -23,10 +23,7 @@ class Actor(nn.Module):
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
-        print("x shape: ", x.shape)
-
         x = F.relu(self.conv2(x))
-        print("x shape: ", x.shape)
 
         x = x.view(-1, 16*11*11)
 

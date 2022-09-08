@@ -12,10 +12,11 @@ class ENV():
         self.board = torch.zeros((self.block_size, self.block_size))
         self.player = 1
         self.done = False
+        self.winer = None
         return self.board.clone()
 
     def show(self):
-        s = " A\t"
+        s = "\n\n\n A\t"
         for i in range(self.block_size):
             if i + 1 < 10:
                 s += " "
@@ -39,7 +40,6 @@ class ENV():
         if player != self.player:
             return self.board.clone(), 0, self.player, False
         if self.board[row][col] != 0:
-            print("return -10")
             self.done = True
             return self.board.clone(), -10, self.player, True
 
@@ -49,6 +49,9 @@ class ENV():
             self.board[row][col] = 0.5
 
         self.checkwin(row, col)
+        if self.done:
+            self.winer = player
+
         reward = 1 if self.done else 0
         if not self.done:
             self.player = (player + 1) % 2  

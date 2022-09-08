@@ -8,10 +8,10 @@ import torch.optim as optim
 
 
 #Hyperparameters
-learning_rate = 0.01
+learning_rate = 0.001
 gamma = 0.99
-episodes = 5
-render = True
+episodes = 5000
+render = False
 SavedAction = namedtuple('SavedAction', ['log_prob', 'value'])
 
 block_size = 15
@@ -23,6 +23,9 @@ optimizer_black = optim.Adam(model_black.parameters(), lr=learning_rate)
 optimizer_white = optim.Adam(model_white.parameters(), lr=learning_rate)
 
 def finish_episode(model, optimizer):
+    if len(model.rewards) == 0:
+        return
+
     R = 0
     save_actions = model.save_actions
     policy_loss = []
@@ -34,7 +37,7 @@ def finish_episode(model, optimizer):
         rewards.insert(0, R)
 
     rewards = torch.tensor(rewards)
-    rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
+    # rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
 
     for (log_prob , value), r in zip(save_actions, rewards):
         reward = r - value.item() 
@@ -61,6 +64,8 @@ def select_action(state, model):
 
 def main():
     for i_episode in range(episodes):
+        print("i_episode: ", i_episode)
+
         state = env.reset()
         player = env.player
         for t in count():
@@ -84,8 +89,12 @@ def main():
                 model_white.rewards.append(reward_white)
                 break
 
-            model_black.rewards.append(reward_black)
+            if env.board.sum().item() > 2: # 小于2意味着是第一步落子，没有经过network
+                model_black.rewards.append(reward_black)
             model_white.rewards.append(reward_white)
+        
+        if env.winer:
+            print("after {} steps, winner is {}".format(t, env.winer))
 
         finish_episode(model_black, optimizer_black)
         finish_episode(model_white, optimizer_white)
