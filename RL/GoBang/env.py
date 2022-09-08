@@ -1,14 +1,18 @@
+from cgitb import reset
 import torch
 from typing import Tuple
 
 class ENV():
     def __init__(self, block_size):
-        self.board = torch.zeros((block_size,block_size))
-
         self.block_size = block_size
 
+        self.reset()
+    
+    def reset(self):
+        self.board = torch.zeros((self.block_size, self.block_size))
         self.player = 1
         self.done = False
+        return self.board.clone()
 
     def show(self):
         s = " A\t"
@@ -28,16 +32,16 @@ class ENV():
                 else:
                     s += " + "
             print(s)
-
-        print("board shape: ", self.board.shape)
     
-    def step(self, player: int, row: int, col: int):
+    def step(self, player: int, row: int, col: int, render = False):
         if self.done:
-            return self.board, 0, self.player, False 
+            return self.board.clone(), 0, self.player, False 
         if player != self.player:
-            return self.board, 0, self.player, False
+            return self.board.clone(), 0, self.player, False
         if self.board[row][col] != 0:
-            return self.board, -10, self.player, False
+            print("return -10")
+            self.done = True
+            return self.board.clone(), -10, self.player, True
 
         if player == 1:
             self.board[row][col] = 1
@@ -48,7 +52,10 @@ class ENV():
         reward = 1 if self.done else 0
         if not self.done:
             self.player = (player + 1) % 2  
-        return self.board, reward, self.player, True
+        
+        if render:
+            self.show()
+        return self.board.clone(), reward, self.player, True
     
     def checkwin(self, row: int, col: int):
         color = self.board[row][col]
