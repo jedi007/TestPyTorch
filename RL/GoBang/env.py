@@ -3,8 +3,9 @@ import torch
 from typing import Tuple
 
 class ENV():
-    def __init__(self, block_size):
+    def __init__(self, block_size, device):
         self.block_size = block_size
+        self.device = device
 
         self.reset()
     
@@ -13,7 +14,7 @@ class ENV():
         self.player = 1
         self.done = False
         self.winer = None
-        return self.board.clone()
+        return self.board.clone().to(self.device)
 
     def show(self):
         s = "\n\n\n A\t"
@@ -36,12 +37,12 @@ class ENV():
     
     def step(self, player: int, row: int, col: int, render = False):
         if self.done:
-            return self.board.clone(), 0, self.player, False 
+            return self.board.clone().to(self.device), 0, self.player, False 
         if player != self.player:
-            return self.board.clone(), 0, self.player, False
+            return self.board.clone().to(self.device), 0, self.player, False
         if self.board[row][col] != 0:
             self.done = True
-            return self.board.clone(), -10, self.player, True
+            return self.board.clone().to(self.device), -10, self.player, True
 
         if player == 1:
             self.board[row][col] = 1
@@ -58,7 +59,7 @@ class ENV():
         
         if render:
             self.show()
-        return self.board.clone(), reward, self.player, True
+        return self.board.clone().to(self.device), reward, self.player, True
     
     def checkwin(self, row: int, col: int):
         color = self.board[row][col]

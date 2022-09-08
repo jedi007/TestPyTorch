@@ -6,7 +6,8 @@ from collections import namedtuple
 from torch.distributions import Categorical
 import torch.optim as optim
 
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("device: ", device)
 #Hyperparameters
 learning_rate = 0.001
 gamma = 0.99
@@ -15,10 +16,12 @@ render = False
 SavedAction = namedtuple('SavedAction', ['log_prob', 'value'])
 
 block_size = 15
-env = ENV(block_size)
+env = ENV(block_size, device)
 
 model_black = Actor(state_space=block_size**2, action_space=block_size**2)
 model_white = Actor(state_space=block_size**2, action_space=block_size**2)
+model_black.to(device)
+model_white.to(device)
 optimizer_black = optim.Adam(model_black.parameters(), lr=learning_rate)
 optimizer_white = optim.Adam(model_white.parameters(), lr=learning_rate)
 
@@ -36,13 +39,13 @@ def finish_episode(model, optimizer):
         R = r + gamma * R
         rewards.insert(0, R)
 
-    rewards = torch.tensor(rewards)
+    rewards = torch.tensor(rewards, device = device)
     rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
 
     for (log_prob , value), r in zip(save_actions, rewards):
         reward = r - value.item() 
         policy_loss.append(-log_prob * reward)  
-        value_loss.append(F.smooth_l1_loss(value, torch.tensor([r])))
+        value_loss.append(F.smooth_l1_loss(value, torch.tensor([r], device=device)))
 
     optimizer.zero_grad()
     loss = torch.stack(policy_loss).sum() + torch.stack(value_loss).sum()
@@ -56,8 +59,8 @@ def select_action(state, model):
     probs, state_value = model(state)
 
     # 保证和a相同的维度大小
-    zero = torch.zeros((1,225))
-    one = torch.ones((1,225))
+    zero = torch.zeros((1,225), device=device)
+    one = torch.ones((1,225), device=device)
 
     x0 = state.clone().view(1,225)
     a = torch.where(x0 > 0.4, one * 0.5, x0) # 已经落子的位置设置为0.5
@@ -103,7 +106,7 @@ def main():
                 model_black.rewards.append(reward_black)
             model_white.rewards.append(reward_white)
         
-        if env.winer != None and i_episode % 200 == 0:
+        if env.winer != None and i_episode % 100 == 0:
             print("i_episode: {} == {} steps, winner is {} @{}-{}".format(i_episode, t, env.winer, row+1, col+1))
             env.show()
 
