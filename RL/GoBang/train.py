@@ -11,7 +11,7 @@ import torch.optim as optim
 learning_rate = 0.001
 gamma = 0.99
 episodes = 5000
-render = True
+render = False
 SavedAction = namedtuple('SavedAction', ['log_prob', 'value'])
 
 block_size = 15
@@ -37,7 +37,7 @@ def finish_episode(model, optimizer):
         rewards.insert(0, R)
 
     rewards = torch.tensor(rewards)
-    # rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
+    rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
 
     for (log_prob , value), r in zip(save_actions, rewards):
         reward = r - value.item() 
@@ -88,14 +88,14 @@ def main():
             state, reward_black, player, info = env.step(player, row, col, render)
             if env.done:
                 model_black.rewards.append(reward_black)
-                model_white.rewards.append(-1 if reward_black == 1 else 0)
+                model_white.rewards.append(-2000)
                 break
 
             # 白棋响应
             row, col = select_action(state.view(1, 1, block_size, block_size), model_white)
             state, reward_white, player, info = env.step(player, row, col, render)
             if env.done:
-                model_black.rewards.append(-1 if reward_white == 1 else 0)
+                model_black.rewards.append(-2000)
                 model_white.rewards.append(reward_white)
                 break
 
@@ -103,14 +103,12 @@ def main():
                 model_black.rewards.append(reward_black)
             model_white.rewards.append(reward_white)
         
-        if i_episode % 200 == 0:
-            print("i_episode: {} , run {} steps".format(i_episode, t))
-        if env.winer:
-            print("after {} steps, winner is {} @{}-{}".format(t, env.winer, row, col))
+        if env.winer != None and i_episode % 200 == 0:
+            print("i_episode: {} == {} steps, winner is {} @{}-{}".format(i_episode, t, env.winer, row+1, col+1))
+            env.show()
 
-        if env.board.sum().item() > 2:
-            finish_episode(model_black, optimizer_black)
-        # finish_episode(model_white, optimizer_white)
+        finish_episode(model_black, optimizer_black)
+        finish_episode(model_white, optimizer_white)
     
     modelPath = './GoBang_Model/ModelTraing'+str(episodes)
     torch.save(model_black.state_dict(), modelPath+'_black.pt')
