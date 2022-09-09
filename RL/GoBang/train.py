@@ -9,9 +9,9 @@ import torch.optim as optim
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("device: ", device)
 #Hyperparameters
-learning_rate = 0.001
+learning_rate = 0.01
 gamma = 0.99
-episodes = 5000
+episodes = 100000
 render = False
 SavedAction = namedtuple('SavedAction', ['log_prob', 'value'])
 
@@ -40,7 +40,7 @@ def finish_episode(model, optimizer):
         rewards.insert(0, R)
 
     rewards = torch.tensor(rewards, device = device)
-    rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
+    # rewards = (rewards - rewards.mean()) / (rewards.std() + e-6)
 
     for (log_prob , value), r in zip(save_actions, rewards):
         reward = r - value.item() 
@@ -57,6 +57,7 @@ def finish_episode(model, optimizer):
 
 def select_action(state, model):
     probs, state_value = model(state)
+    # print("probs 1: ",probs)
 
     # 保证和a相同的维度大小
     zero = torch.zeros((1,225), device=device)
@@ -68,13 +69,20 @@ def select_action(state, model):
     a = torch.where(a < 0.6, zero, a) # 已经落子的位置0
 
     probs = probs.clone() * a
+    # print("a: ",a)
+    # print("probs 2: ",probs)
+    # print("probs.sum(): ", probs.sum())
+    probs /= probs.sum()
 
+    # print("probs 3: ",probs)
     m = Categorical(probs)
     action = m.sample()
     model.save_actions.append(SavedAction(m.log_prob(action), state_value.view(1)))
 
     row = int(action.item() / block_size)
-    col = action.item() % block_size
+    col = int(action.item() % block_size)
+
+    # print("row, col: ",row, col)
     return row, col
 
 def main():
@@ -107,8 +115,8 @@ def main():
             model_white.rewards.append(reward_white)
         
         if env.winer != None and i_episode % 100 == 0:
-            print("i_episode: {} == {} steps, winner is {} @{}-{}".format(i_episode, t, env.winer, row+1, col+1))
             env.show()
+            print("i_episode: {} == {} steps, winner is {} @{}-{}".format(i_episode, t, env.winer, row+1, col+1))
 
         finish_episode(model_black, optimizer_black)
         finish_episode(model_white, optimizer_white)
