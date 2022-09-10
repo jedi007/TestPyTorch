@@ -53,7 +53,7 @@ class ENV():
         if self.done:
             self.winer = player
 
-        reward = 2000 if self.done else 1
+        reward = 500 if self.done else 1
         if not self.done:
             self.player = (player + 1) % 2  
         
