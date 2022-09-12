@@ -68,7 +68,8 @@ def finish_episode():
     rewards = torch.tensor(rewards)
     rewards = (rewards - rewards.mean()) / (rewards.std() + eps)
     for log_prob, reward in zip(policy.saved_log_probs, rewards):
-        policy_loss.append(-log_prob * reward)
+        policy_loss.append(-log_prob * reward)  # 在这个demo中reward始终是正的，所以policy任何一个操作随机到的操作都会被提升概率。但是因为正确的、得分更高的操作被提升的幅度会更大。
+                                                # 所以网络最终会倾向于不断增大正确操作的输出概率
     optimizer.zero_grad()
     policy_loss = torch.cat(policy_loss).sum()
     policy_loss.backward()
