@@ -20,3 +20,5 @@ __pycache__
 /base/paddle/OCR/output
 /NLP/data
 /NLP/Transformer/dataset
+*.pkl
+RL/Actor-Critic/AC_CartPole-v0
