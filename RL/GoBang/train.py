@@ -21,8 +21,10 @@ env = ENV(block_size, device)
 
 model_black = Actor(state_space=block_size**2, action_space=block_size**2)
 model_white = Actor(state_space=block_size**2, action_space=block_size**2)
+
 model_black.load_state_dict(torch.load("GoBang_Model/ModelTraing200000_black.pt"))
 model_white.load_state_dict(torch.load("GoBang_Model/ModelTraing200000_white.pt"))
+
 model_black.to(device)
 model_white.to(device)
 optimizer_black = optim.Adam(model_black.parameters(), lr=learning_rate)
@@ -179,6 +181,7 @@ def main():
             modelPath = './GoBang_Model/ModelTraing'+str(i_episode)
             torch.save(model_black.state_dict(), modelPath+'_black.pt')
             torch.save(model_white.state_dict(), modelPath+'_white.pt')
+            
 
 if __name__ == '__main__':
     main()
