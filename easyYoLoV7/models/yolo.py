@@ -27,10 +27,8 @@ import models.yolov7 as factory
 class Model(nn.Module): # 只能命名为Model, 否则无法直接加载官方的权重文件
     def __init__(self, ch=3, nc=None, anchors=None):  # model, input channels, number of classes
         super(Model, self).__init__()
-        self.traced = False
 
         self.model, self.froms, self.save = factory.create()
-
 
         self.names = [str(i) for i in range(80)]  # default names
         # print([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
@@ -80,33 +78,14 @@ class Model(nn.Module): # 只能命名为Model, 否则无法直接加载官方�
                 if len(x) == 1:
                     x = x[0]
 
-            if not hasattr(self, 'traced'):
-                self.traced=False
-
-            if self.traced:
-                if isinstance(m, Detect) or isinstance(m, IDetect) or isinstance(m, IAuxDetect) or isinstance(m, IKeypoint):
-                    break
-
-            if profile:
-                c = isinstance(m, (Detect, IDetect, IAuxDetect, IBin))
-                o = thop.profile(m, inputs=(x.copy() if c else x,), verbose=False)[0] / 1E9 * 2 if thop else 0  # FLOPS
-                for _ in range(10):
-                    m(x.copy() if c else x)
-                t = time_synchronized()
-                for _ in range(10):
-                    m(x.copy() if c else x)
-                dt.append((time_synchronized() - t) * 100)
-
-                np = sum([x.numel() for x in m.parameters()])
-                mtype = str(m)[8:-2].replace('__main__.', '')  # module type
-                print('%10.1f%10.0f%10.1fms %-40s' % (o, np, dt[-1], mtype))
+            # np = sum([x.numel() for x in m.parameters()])
+            # mtype = str(m)[8:-2].replace('__main__.', '')  # module type
+            # print('%10.1f%10.0f%10.1fms %-40s' % (o, np, dt[-1], mtype))
 
             x = m(x)  # run
             
             y.append(x if i in self.save else None)  # save output
 
-        if profile:
-            print('%.1fms total' % sum(dt))
         return x
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
