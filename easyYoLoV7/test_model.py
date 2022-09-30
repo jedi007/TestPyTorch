@@ -8,7 +8,7 @@ if __name__ == '__main__':
     ckpt = torch.load("D:/testProject/TestPyTorch/easyYoLoV7/yolov7.pt", map_location=device)  # load checkpoint
     state_dict = ckpt['model'].float().state_dict()  # to FP32
     
-    model = Model(cfg='')
+    model = Model()
     model.info(verbose=True)
     model.load_state_dict(state_dict, strict=False)  # load
 

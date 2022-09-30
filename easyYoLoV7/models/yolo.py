@@ -25,7 +25,7 @@ except ImportError:
 import models.yolov7 as factory
 
 class Model(nn.Module): # 只能命名为Model, 否则无法直接加载官方的权重文件
-    def __init__(self, cfg='yolor-csp-c.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
+    def __init__(self, ch=3, nc=None, anchors=None):  # model, input channels, number of classes
         super(Model, self).__init__()
         self.traced = False
 
