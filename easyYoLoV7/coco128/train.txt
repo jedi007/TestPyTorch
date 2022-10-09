@@ -1,0 +1,8 @@
+coco128/images/000000000009.jpg
+coco128/images/000000000025.jpg
+coco128/images/000000000030.jpg
+coco128/images/000000000034.jpg
+coco128/images/000000000036.jpg
+coco128/images/000000000042.jpg
+coco128/images/000000000049.jpg
+coco128/images/000000000061.jpg

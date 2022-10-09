@@ -22,3 +22,4 @@ __pycache__
 /NLP/Transformer/dataset
 *.pkl
 RL/Actor-Critic/AC_CartPole-v0
+easyYoLoV7/wandb

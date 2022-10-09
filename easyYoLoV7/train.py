@@ -85,7 +85,8 @@ def train(hyp, opt, device, tb_writer=None):
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
-        model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        model = Model(ch=3).to(device)  # create
+
         exclude = ['anchor'] if (opt.cfg or hyp.get('anchors')) and not opt.resume else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
         state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
@@ -246,7 +247,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
-                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
+                                            hyp=hyp, augment=True, 
                                             world_size=opt.world_size, workers=opt.workers,
                                             prefix=colorstr('train: '))
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
@@ -256,9 +257,9 @@ def train(hyp, opt, device, tb_writer=None):
     # Process 0
     if rank in [-1, 0]:
         testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
-                                       hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
+                                       hyp=hyp, 
                                        world_size=opt.world_size, workers=opt.workers,
-                                       pad=0.5, prefix=colorstr('val: '))[0]
+                                       prefix=colorstr('val: '))[0]
 
         if not opt.resume:
             labels = np.concatenate(dataset.labels, 0)
@@ -310,20 +311,6 @@ def train(hyp, opt, device, tb_writer=None):
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
-        # Update image weights (optional)
-        if opt.image_weights:
-            # Generate indices
-            if rank in [-1, 0]:
-                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc  # class weights
-                iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)  # image weights
-                dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)  # rand weighted idx
-            # Broadcast if DDP
-            if rank != -1:
-                indices = (torch.tensor(dataset.indices) if rank == 0 else torch.zeros(dataset.n)).int()
-                dist.broadcast(indices, 0)
-                if rank != 0:
-                    dataset.indices = indices.cpu().numpy()
-
         # Update mosaic border
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
@@ -368,8 +355,6 @@ def train(hyp, opt, device, tb_writer=None):
                     loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
-                if opt.quad:
-                    loss *= 4.
 
             # Backward
             scaler.scale(loss).backward()
@@ -528,9 +513,9 @@ def train(hyp, opt, device, tb_writer=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov7.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='data/hyp.scratch.p5.yaml', help='hyperparameters path')
+    parser.add_argument('--cfg', type=str, default='', help='file/model.yaml path')
+    parser.add_argument('--data', type=str, default='file/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--hyp', type=str, default='file/hyp.scratch.p5.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
