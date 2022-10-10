@@ -26,7 +26,6 @@ def test(data,
          iou_thres=0.6,  # for NMS
          save_json=False,
          single_cls=False,
-         augment=False,
          verbose=False,
          model=None,
          dataloader=None,
@@ -107,7 +106,7 @@ def test(data,
         with torch.no_grad():
             # Run model
             t = time_synchronized()
-            out, train_out = model(img, augment=augment)  # inference and training outputs
+            out, train_out = model(img)  # inference and training outputs
             t0 += time_synchronized() - t
 
             # Compute loss

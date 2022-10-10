@@ -58,41 +58,17 @@ class Model(nn.Module): # 只能命名为Model, 否则无法直接加载官方�
         self.info()
         logger.info('')
 
-    def forward(self, x, augment=False):
-        if augment:
-            img_size = x.shape[-2:]  # height, width
-            s = [1, 0.83, 0.67]  # scales
-            f = [None, 3, None]  # flips (2-ud, 3-lr)
-            y = []  # outputs
-            for si, fi in zip(s, f):
-                xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
-                yi = self.forward_once(xi)[0]  # forward
-                # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
-                yi[..., :4] /= si  # de-scale
-                if fi == 2:
-                    yi[..., 1] = img_size[0] - yi[..., 1]  # de-flip ud
-                elif fi == 3:
-                    yi[..., 0] = img_size[1] - yi[..., 0]  # de-flip lr
-                y.append(yi)
-            return torch.cat(y, 1), None  # augmented inference, train
-        else:
-            return self.forward_once(x)  # single-scale inference, train
-
-    def forward_once(self, x):
-        y, dt = [], []  # outputs
+    def forward(self, x):
+        saved = []  # saved outputs
         for i, m in enumerate(self.model):
             if self.froms[i] != -1:
-                x = [x if j == -1 else y[j] for j in self.froms[i]]  # from earlier layers
+                x = [x if j == -1 else saved[j] for j in self.froms[i]]  # from earlier layers
                 if len(x) == 1:
                     x = x[0]
 
-            # np = sum([x.numel() for x in m.parameters()])
-            # mtype = str(m)[8:-2].replace('__main__.', '')  # module type
-            # print('%10.1f%10.0f%10.1fms %-40s' % (o, np, dt[-1], mtype))
-
             x = m(x)  # run
             
-            y.append(x if i in self.save else None)  # save output
+            saved.append(x if i in self.save else None)  # save output
 
         return x
 
