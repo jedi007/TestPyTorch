@@ -17,7 +17,6 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
 from torch.cuda import amp
-from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
@@ -268,12 +267,6 @@ def train(hyp, opt, device):
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
             model.half().float()  # pre-reduce anchor precision
-
-    # DDP mode
-    if cuda and rank != -1:
-        model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank,
-                    # nn.MultiheadAttention incompatibility with DDP https://github.com/pytorch/pytorch/issues/26698
-                    find_unused_parameters=any(isinstance(layer, nn.MultiheadAttention) for layer in model.modules()))
 
     # Model parameters
     hyp['box'] *= 3. / nl  # scale to layers
