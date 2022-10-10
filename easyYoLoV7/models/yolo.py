@@ -58,7 +58,7 @@ class Model(nn.Module): # 只能命名为Model, 否则无法直接加载官方�
         self.info()
         logger.info('')
 
-    def forward(self, x, augment=False, profile=False):
+    def forward(self, x, augment=False):
         if augment:
             img_size = x.shape[-2:]  # height, width
             s = [1, 0.83, 0.67]  # scales
@@ -76,9 +76,9 @@ class Model(nn.Module): # 只能命名为Model, 否则无法直接加载官方�
                 y.append(yi)
             return torch.cat(y, 1), None  # augmented inference, train
         else:
-            return self.forward_once(x, profile)  # single-scale inference, train
+            return self.forward_once(x)  # single-scale inference, train
 
-    def forward_once(self, x, profile=False):
+    def forward_once(self, x):
         y, dt = [], []  # outputs
         for i, m in enumerate(self.model):
             if self.froms[i] != -1:
