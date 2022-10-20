@@ -60,16 +60,16 @@ if __name__ == '__main__':
 
     datatool = MyDataset("data/test.txt", imgpath="data/test")
 
-    img = load_image("./data/test/3542-湘UBJZHL.jpg")
-    img = img.to(device, non_blocking=True).float() / 255.0
-    text = infer_one_img(img, model, datatool, device)
-    print("text: ", text)
+    # img = load_image("./data/test/3542-湘UBJZHL.jpg")
+    # img = img.to(device, non_blocking=True).float() / 255.0
+    # text = infer_one_img(img, model, datatool, device)
+    # print("text: ", text)
 
 
-    img = load_image("./data/test/9-甘KCRA5Y.jpg")
-    img = img.to(device, non_blocking=True).float() / 255.0
-    text = infer_one_img(img, model, datatool, device)
-    print("text: ", text)
+    # img = load_image("./data/test/9-甘KCRA5Y.jpg")
+    # img = img.to(device, non_blocking=True).float() / 255.0
+    # text = infer_one_img(img, model, datatool, device)
+    # print("text: ", text)
 
 
     img = load_image("./data/train/0-浙NJVJLH.jpg")
