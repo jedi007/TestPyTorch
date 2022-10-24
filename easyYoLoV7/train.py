@@ -79,19 +79,18 @@ def train(hyp, opt, device):
 
     # Model
     pretrained = weights.endswith('.pt')
+    model = Model(ch=3).to(device)  # create
     if pretrained:
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
-        model = Model(ch=3).to(device)  # create
 
-        exclude = ['anchor'] if (opt.cfg or hyp.get('anchors')) and not opt.resume else []  # exclude keys
+        exclude = ['anchor'] if hyp.get('anchors') and not opt.resume else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
         state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
         model.load_state_dict(state_dict, strict=False)  # load
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
-    else:
-        model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
@@ -336,6 +335,7 @@ def train(hyp, opt, device):
             scaler.scale(loss).backward()
 
             # Optimize
+            accumulate = 1
             if ni % accumulate == 0:
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
@@ -415,8 +415,8 @@ def train(hyp, opt, device):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
-                        'model': deepcopy(model.module if is_parallel(model) else model).half(),
-                        'ema': deepcopy(ema.ema).half(),
+                        'model': deepcopy(model.module if is_parallel(model) else model),
+                        'ema': deepcopy(ema.ema),
                         'updates': ema.updates,
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_logger.wandb_run.id if wandb_logger.wandb else None}
@@ -458,7 +458,7 @@ def train(hyp, opt, device):
                                           imgsz=imgsz_test,
                                           conf_thres=0.001,
                                           iou_thres=0.7,
-                                          model=attempt_load(m, device).half(),
+                                          model=attempt_load(m, device),
                                           single_cls=opt.single_cls,
                                           dataloader=testloader,
                                           save_dir=save_dir,
@@ -486,11 +486,11 @@ def train(hyp, opt, device):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov7.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='file/model.yaml path')
+    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--model_type', type=str, default='yolov7', help='yolov7/yolov7x/yolov7_tiny')
     parser.add_argument('--data', type=str, default='file/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='file/hyp.scratch.p5.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=3)
+    parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
@@ -528,8 +528,8 @@ if __name__ == '__main__':
     print("opt: ", opt)
 
     # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
-    opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
-    assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
+    opt.data, opt.hyp = check_file(opt.data), check_file(opt.hyp)  # check files
+    assert len(opt.model_type) or len(opt.weights), 'either --cfg or --weights must be specified'
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     opt.name = 'evolve' if opt.evolve else opt.name
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
