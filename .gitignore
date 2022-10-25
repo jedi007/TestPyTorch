@@ -24,3 +24,4 @@ __pycache__
 RL/Actor-Critic/AC_CartPole-v0
 easyYoLoV7/wandb
 CCPDdata/
+testCCPD/inference
