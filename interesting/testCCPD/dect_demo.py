@@ -2,12 +2,12 @@ import sys
 sys.path.append("./YoloV7Core")
 sys.path.append("./RCNNCore")
 
-from YoloV7Core.models.yolo import Model as YOLOModel
 import torch
 import random
 import cv2
 import numpy as np
 
+from YoloV7Core.models.yolo import Model as YOLOModel
 from YoloV7Core.utils.general import non_max_suppression, scale_coords
 from YoloV7Core.utils.plots import plot_one_box
 from YoloV7Core.utils.datasets import letterbox
