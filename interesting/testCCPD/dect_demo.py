@@ -13,14 +13,11 @@ from YoloV7Core.utils.plots import plot_one_box
 from YoloV7Core.utils.datasets import letterbox
 
 from RCNNCore.infer import infer_one_img as rcnn_infer_one_img
-from RCNNCore.datasets import MyDataset
 from RCNNCore.model import Model as RCNNModel
 
 
 def demo_img(model_yolov7, model_rcnn, img0):
     print("demo_img")
-    datatool = MyDataset("RCNNCore/data/test.txt", imgpath="data/test")
-
     # Padded resize
     img = letterbox(img0, imgsz, stride=32)[0]
 
@@ -68,7 +65,7 @@ def demo_img(model_yolov7, model_rcnn, img0):
                     print("license_plate: ", license_plate.shape)
                     # exit(0)
 
-                    text = rcnn_infer_one_img(license_plate, model_rcnn, datatool, device)
+                    text = rcnn_infer_one_img(license_plate, model_rcnn, device)
 
                     label += " : " + text
 

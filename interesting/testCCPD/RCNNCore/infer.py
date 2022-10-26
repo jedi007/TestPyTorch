@@ -3,10 +3,9 @@ from PIL import Image
 import torchvision.transforms as transforms
 import torch
 import random
-from torch.autograd import Variable
 
 from model import Model
-from datasets import *
+from tools import decode, load_image
 
 # copy from mydataset
 class resizeNormalize(object):
@@ -37,14 +36,14 @@ class resizeNormalize(object):
             img = tmp
         return img
 
-def infer_one_img(img, model, datatool, device):
+def infer_one_img(img, model, device):
     image = img.view( 1, *img.shape ).to(device)
 
     preds = model(image)
     _, preds = preds.max(2)
     preds = preds.transpose(1, 0).contiguous().view(-1)
 
-    txt = datatool.decode(preds)
+    txt = decode(preds)
     return txt
 
 
@@ -54,25 +53,23 @@ if __name__ == '__main__':
 
     model = Model(imgH = 32, number_chanel = 3, number_class = 72)
 
-    model.load_state_dict(torch.load("weights/22-0.162.pth"))
+    model.load_state_dict(torch.load("22-0.162.pth"))
     model.eval()
     model.to(device)
 
-    datatool = MyDataset("data/test.txt", imgpath="data/test")
-
     # img = load_image("./data/test/3542-湘UBJZHL.jpg")
     # img = img.to(device, non_blocking=True).float() / 255.0
-    # text = infer_one_img(img, model, datatool, device)
+    # text = infer_one_img(img, model, device)
     # print("text: ", text)
 
 
     # img = load_image("./data/test/9-甘KCRA5Y.jpg")
     # img = img.to(device, non_blocking=True).float() / 255.0
-    # text = infer_one_img(img, model, datatool, device)
+    # text = infer_one_img(img, model, device)
     # print("text: ", text)
 
 
     img = load_image("./data/train/0-浙NJVJLH.jpg")
     img = img.to(device, non_blocking=True).float() / 255.0
-    text = infer_one_img(img, model, datatool, device)
+    text = infer_one_img(img, model, device)
     print("text: ", text)
