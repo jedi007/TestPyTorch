@@ -1,4 +1,4 @@
-from models.yolo import Model
+from models.yolo import Model as YOLOModel
 import torch
 import random
 import cv2
@@ -6,6 +6,8 @@ import numpy as np
 
 from utils.general import non_max_suppression, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
+
+from infer import *
 
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     ckpt = torch.load("best_v7.pt", map_location=device)  # load checkpoint
     state_dict = ckpt['model'].float().state_dict()  # to FP32
     
-    model = Model(ch=3)
+    model = YOLOModel(ch=3)
     model.info(verbose=True)
     model.load_state_dict(state_dict, strict=False)  # load
 
@@ -64,8 +66,23 @@ if __name__ == '__main__':
     # if device.type != 'cpu':
     #     model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
 
+
+
+    rcnn_model = Model(imgH = 32, number_chanel = 3, number_class = 72)
+
+    rcnn_model.load_state_dict(torch.load("weights/22-0.162.pth"))
+    rcnn_model.eval()
+    rcnn_model.to(device)
+
+    datatool = MyDataset("data/test.txt", imgpath="data/test")
+
+    # img = load_image("./data/train/0-浙NJVJLH.jpg")
+    # img = img.to(device, non_blocking=True).float() / 255.0
+
+
     
-    path = "inference/images/01-90_265-231&522_405&574-405&571_235&574_231&523_403&522-0_0_3_1_28_29_30_30-134-56.jpg"
+    path = "inference/images/test.jpeg"
+    # path = "inference/images/01-90_265-231&522_405&574-405&571_235&574_231&523_403&522-0_0_3_1_28_29_30_30-134-56.jpg"
     # path = "inference/images/bus.jpg"
     #img0 = cv2.imread(path)  # BGR
     img0 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
@@ -98,8 +115,35 @@ if __name__ == '__main__':
 
             # Write results
             for *xyxy, conf, cls in reversed(det):
-                if int(cls) == 80:
+                if int(cls) == 80: # names[80] == 'License plate'
                     label = f'{names[int(cls)]} {conf:.2f}'
+
+                    license_plate = img0[int(xyxy[1]):int(xyxy[3]), int(xyxy[0]):int(xyxy[2])]
+
+                    print("license_plate: ", license_plate)
+
+                    license_plate = cv2.resize(license_plate, (108, 32), interpolation=cv2.INTER_LINEAR)
+                    print("license_plate 1: ", license_plate.shape)
+                    # top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+                    # left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+                    license_plate = cv2.copyMakeBorder(license_plate, 0, 0, 11, 11, cv2.BORDER_CONSTANT, value=(114, 114, 114))  # add border
+                    print("license_plate 2: ", license_plate.shape)
+
+
+                    license_plate = license_plate[:, :, ::-1].transpose(2, 0, 1)
+                    license_plate = np.ascontiguousarray(license_plate)
+                    license_plate = torch.from_numpy(license_plate)
+                    license_plate = license_plate.to(device, non_blocking=True).float() / 255.0
+
+                    
+
+                    print("license_plate: ", license_plate.shape)
+                    # exit(0)
+
+                    text = infer_one_img(license_plate, rcnn_model, datatool, device)
+
+                    label += " : " + text
+
                     plot_one_box(xyxy, img0, label=label, color=colors[int(cls)], line_thickness=1)
 
         cv2.imshow("detect show", img0)
