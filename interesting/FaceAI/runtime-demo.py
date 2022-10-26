@@ -127,7 +127,7 @@ if __name__ == '__main__':
     
 
 
-    demo_img(model_yolo5face, model_facenet, features_myface)
+    # demo_img(model_yolo5face, model_facenet, features_myface)
 
-    # demo_VideoCapture(model_yolo5face, model_facenet, features_myface)
+    demo_VideoCapture(model_yolo5face, model_facenet, features_myface)
 
