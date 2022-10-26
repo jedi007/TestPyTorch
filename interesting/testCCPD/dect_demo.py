@@ -1,11 +1,14 @@
-from models.yolo import Model as YOLOModel
+import sys
+sys.path.append("./YoloV7Core")
+
+from YoloV7Core.models.yolo import Model as YOLOModel
 import torch
 import random
 import cv2
 import numpy as np
 
-from utils.general import non_max_suppression, scale_coords
-from utils.plots import plot_one_box
+from YoloV7Core.utils.general import non_max_suppression, scale_coords
+from YoloV7Core.utils.plots import plot_one_box
 
 from infer import *
 
@@ -109,7 +112,7 @@ if __name__ == '__main__':
     imgsz = 640
     
     #init model_yolov7
-    ckpt = torch.load("best_v7.pt", map_location=device)  # load checkpoint
+    ckpt = torch.load("weights/best_v7.pt", map_location=device)  # load checkpoint
     state_dict = ckpt['model'].float().state_dict()  # to FP32
     
     model_yolov7 = YOLOModel(ch=3)
