@@ -12,7 +12,9 @@ from YoloV7Core.utils.general import non_max_suppression, scale_coords
 from YoloV7Core.utils.plots import plot_one_box
 from YoloV7Core.utils.datasets import letterbox
 
-from RCNNCore.infer import *
+from RCNNCore.infer import infer_one_img as rcnn_infer_one_img
+from RCNNCore.datasets import MyDataset
+from RCNNCore.model import Model as RCNNModel
 
 
 def demo_img(model_yolov7, model_rcnn, img0):
@@ -66,7 +68,7 @@ def demo_img(model_yolov7, model_rcnn, img0):
                     print("license_plate: ", license_plate.shape)
                     # exit(0)
 
-                    text = infer_one_img(license_plate, model_rcnn, datatool, device)
+                    text = rcnn_infer_one_img(license_plate, model_rcnn, datatool, device)
 
                     label += " : " + text
 
@@ -98,7 +100,7 @@ if __name__ == '__main__':
 
 
     #init model_rcnn
-    model_rcnn = Model(imgH = 32, number_chanel = 3, number_class = 72)
+    model_rcnn = RCNNModel(imgH = 32, number_chanel = 3, number_class = 72)
 
     model_rcnn.load_state_dict(torch.load("RCNNCore/22-0.162.pth"))
     model_rcnn.eval()
