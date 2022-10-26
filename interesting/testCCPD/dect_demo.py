@@ -1,5 +1,6 @@
 import sys
 sys.path.append("./YoloV7Core")
+sys.path.append("./RCNNCore")
 
 from YoloV7Core.models.yolo import Model as YOLOModel
 import torch
@@ -10,7 +11,7 @@ import numpy as np
 from YoloV7Core.utils.general import non_max_suppression, scale_coords
 from YoloV7Core.utils.plots import plot_one_box
 
-from infer import *
+from RCNNCore.infer import *
 
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
@@ -47,7 +48,7 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
 
 def demo_img(model_yolov7, model_rcnn, img0):
     print("demo_img")
-    datatool = MyDataset("data/test.txt", imgpath="data/test")
+    datatool = MyDataset("RCNNCore/data/test.txt", imgpath="data/test")
 
     # Padded resize
     img = letterbox(img0, imgsz, stride=32)[0]
@@ -112,7 +113,7 @@ if __name__ == '__main__':
     imgsz = 640
     
     #init model_yolov7
-    ckpt = torch.load("weights/best_v7.pt", map_location=device)  # load checkpoint
+    ckpt = torch.load("YoloV7Core/best_v7.pt", map_location=device)  # load checkpoint
     state_dict = ckpt['model'].float().state_dict()  # to FP32
     
     model_yolov7 = YOLOModel(ch=3)
@@ -130,12 +131,12 @@ if __name__ == '__main__':
     #init model_rcnn
     model_rcnn = Model(imgH = 32, number_chanel = 3, number_class = 72)
 
-    model_rcnn.load_state_dict(torch.load("weights/22-0.162.pth"))
+    model_rcnn.load_state_dict(torch.load("RCNNCore/22-0.162.pth"))
     model_rcnn.eval()
     model_rcnn.to(device)
 
     
-    path = "inference/images/test.jpeg"
+    path = "YoloV7Core/inference/images/test.jpeg"
     # path = "inference/images/01-90_265-231&522_405&574-405&571_235&574_231&523_403&522-0_0_3_1_28_29_30_30-134-56.jpg"
     # path = "inference/images/bus.jpg"
     img0 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
