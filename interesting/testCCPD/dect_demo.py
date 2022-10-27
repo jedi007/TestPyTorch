@@ -17,7 +17,7 @@ from RCNNCore.model import Model as RCNNModel
 from RCNNCore.tools import words_list
 
 
-def demo_img(model_yolov7, model_rcnn, img0):
+def demo_img(model_yolov7, model_rcnn, img0, device):
     print("demo_img")
     # Padded resize
     img = letterbox(img0, imgsz, stride=32)[0]
@@ -92,6 +92,7 @@ def demo_img(model_yolov7, model_rcnn, img0):
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("device: ", device)
+    device = torch.device("cpu")
     imgsz = 640
     
     #init model_yolov7
@@ -113,16 +114,29 @@ if __name__ == '__main__':
     #init model_rcnn
     model_rcnn = RCNNModel(imgH = 32, number_chanel = 3, number_class = len(words_list))
 
-    model_rcnn.load_state_dict(torch.load("RCNNCore/weights/17-0.100.pth"))
+    model_rcnn.load_state_dict(torch.load("RCNNCore/weights/39-0.034.pth"))
     model_rcnn.eval()
     model_rcnn.to(device)
 
     
-    # path = "YoloV7Core/inference/images/0416283524904-91_80-135&514_569&634-582&637_137&612_114&509_559&534-0_0_25_16_31_27_27-119-154.jpg"
+    path = "YoloV7Core/inference/images/0416283524904-91_80-135&514_569&634-582&637_137&612_114&509_559&534-0_0_25_16_31_27_27-119-154.jpg"
+    img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+    assert img is not None, 'Image Not Found ' + path
+    demo_img(model_yolov7, model_rcnn, img, device)
+
+    
     path = "YoloV7Core/inference/images/01-90_265-231&522_405&574-405&571_235&574_231&523_403&522-0_0_3_1_28_29_30_30-134-56.jpg"
-    # path = "inference/images/bus.jpg"
-    img0 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
-    assert img0 is not None, 'Image Not Found ' + path
+    img1 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+    assert img1 is not None, 'Image Not Found ' + path
+    demo_img(model_yolov7, model_rcnn, img1, device)
 
-
-    demo_img(model_yolov7, model_rcnn, img0)
+    path = "YoloV7Core/inference/images/test.jpeg"
+    img2 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+    assert img2 is not None, 'Image Not Found ' + path
+    demo_img(model_yolov7, model_rcnn, img2, device)
+    
+    
+    path = "YoloV7Core/inference/images/bus.jpg"
+    img3 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+    assert img3 is not None, 'Image Not Found ' + path
+    demo_img(model_yolov7, model_rcnn, img3, device)
