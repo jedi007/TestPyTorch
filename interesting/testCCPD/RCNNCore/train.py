@@ -6,6 +6,7 @@ from torch.autograd import Variable
 
 from model import Model
 from infer import *
+from tools import words_list
 
 
 
@@ -58,10 +59,10 @@ if __name__ == '__main__':
         num_workers = num_workers,
         collate_fn = MyDataset.collate_fn)
     
-    criterion = CTCLoss(reduction='sum',blank=train_dataset.get_words_count()-1).to(device=device)
+    criterion = CTCLoss(reduction='sum',blank=len(words_list)-1).to(device=device)
 
-    model = Model(imgH = 32, number_chanel = 3, number_class = train_dataset.get_words_count())
-    model.load_state_dict(torch.load("weights/11-0.20552054047584534.pth"))
+    model = Model(imgH = 32, number_chanel = 3, number_class = len(words_list))
+    # model.load_state_dict(torch.load("weights/11-0.20552054047584534.pth"))
     model.train()
     model.to(device=device)
 

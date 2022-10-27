@@ -46,9 +46,20 @@ def load_image(imgpath):
     img = cv2.imdecode(np.fromfile(imgpath, dtype=np.uint8), cv2.IMREAD_COLOR)
     assert img is not None, 'Image Not Found ' + imgpath
 
-    # cv2.namedWindow("test", cv2.WINDOW_NORMAL)
-    # cv2.imshow("test", img)
-    # cv2.waitKey(0)
+    # resize
+    h = img.shape[0]
+    w = img.shape[1]
+    ratio = min(32/h, 130/w)
+    nh = round(h*ratio)
+    nw = round(w*ratio)
+    dh = (32 - nh) / 2
+    dw = (130 - nw) / 2
+    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+    
+    img = cv2.resize(img, (nw, nh), interpolation=cv2.INTER_LINEAR)
+    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))  # add border
+
 
     img = img[:, :, ::-1].transpose(2, 0, 1)
     img = np.ascontiguousarray(img)
