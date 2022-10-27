@@ -38,9 +38,6 @@ class MyDataset(Dataset):
 
     def __len__(self):
         return len(self.labels)
-
-    def get_words_count(self):
-        return len(self.words_list)
     
     @staticmethod
     def collate_fn(batch):
