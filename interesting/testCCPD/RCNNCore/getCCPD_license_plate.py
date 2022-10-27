@@ -45,7 +45,7 @@ if __name__ == '__main__':
                 for i in range(1, len(lp)):
                     lp_str += wordlist[lp[i]]
 
-                note_train.write(f"{lp_str}.jpg {lp_str}\n")
+                note_train.write(f"{lp_str}.jpg\t{lp_str}\n")
 
 
                 points = name_list[3].split("_")
