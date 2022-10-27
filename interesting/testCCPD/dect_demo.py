@@ -14,6 +14,7 @@ from YoloV7Core.utils.datasets import letterbox
 
 from RCNNCore.infer import infer_one_img as rcnn_infer_one_img
 from RCNNCore.model import Model as RCNNModel
+from RCNNCore.tools import words_list
 
 
 def demo_img(model_yolov7, model_rcnn, img0):
@@ -47,10 +48,23 @@ def demo_img(model_yolov7, model_rcnn, img0):
 
                     license_plate = img0[int(xyxy[1]):int(xyxy[3]), int(xyxy[0]):int(xyxy[2])]
 
-                    license_plate = cv2.resize(license_plate, (108, 32), interpolation=cv2.INTER_LINEAR)
-                    # top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
-                    # left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-                    license_plate = cv2.copyMakeBorder(license_plate, 0, 0, 11, 11, cv2.BORDER_CONSTANT, value=(114, 114, 114))  # add border
+                    print("license_plate.shape: ",license_plate.shape)
+                    h = license_plate.shape[0]
+                    w = license_plate.shape[1]
+                    ratio = min(32/h, 130/w)
+                    nh = round(h*ratio)
+                    nw = round(w*ratio)
+                    dh = (32 - nh) / 2
+                    dw = (130 - nw) / 2
+
+
+                    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+                    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+                    
+                    license_plate = cv2.resize(license_plate, (nw, nh), interpolation=cv2.INTER_LINEAR)
+
+
+                    license_plate = cv2.copyMakeBorder(license_plate, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))  # add border
                     print("license_plate 2: ", license_plate.shape)
 
 
@@ -97,15 +111,15 @@ if __name__ == '__main__':
 
 
     #init model_rcnn
-    model_rcnn = RCNNModel(imgH = 32, number_chanel = 3, number_class = 72)
+    model_rcnn = RCNNModel(imgH = 32, number_chanel = 3, number_class = len(words_list))
 
-    model_rcnn.load_state_dict(torch.load("RCNNCore/22-0.162.pth"))
+    model_rcnn.load_state_dict(torch.load("RCNNCore/weights/17-0.100.pth"))
     model_rcnn.eval()
     model_rcnn.to(device)
 
     
-    path = "YoloV7Core/inference/images/test.jpeg"
-    # path = "inference/images/01-90_265-231&522_405&574-405&571_235&574_231&523_403&522-0_0_3_1_28_29_30_30-134-56.jpg"
+    # path = "YoloV7Core/inference/images/0416283524904-91_80-135&514_569&634-582&637_137&612_114&509_559&534-0_0_25_16_31_27_27-119-154.jpg"
+    path = "YoloV7Core/inference/images/01-90_265-231&522_405&574-405&571_235&574_231&523_403&522-0_0_3_1_28_29_30_30-134-56.jpg"
     # path = "inference/images/bus.jpg"
     img0 = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
     assert img0 is not None, 'Image Not Found ' + path
