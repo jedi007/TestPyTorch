@@ -1,7 +1,5 @@
 #导入相应的包  
-import scipy  
-import scipy.cluster.hierarchy as sch  
-from scipy.cluster.vq import vq,kmeans,whiten  
+from scipy.cluster.vq import kmeans
 import numpy as np  
 import os
 import cv2
