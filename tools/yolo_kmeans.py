@@ -7,7 +7,7 @@ import os
 import cv2
 
 
-def Kmeans(images_path, labels_path, k = 3, image_type = ".jpg"):
+def Kmeans(labels_path, k = 3, image_type = ".jpg"):
     wh_points = []
     for root,dirs,files in os.walk(labels_path): 
         for file in files: 
@@ -33,7 +33,6 @@ def Kmeans(images_path, labels_path, k = 3, image_type = ".jpg"):
                 ###逐行读取数据
                 for line in content:
                     line = line.strip()
-                    print(line)
                     label = line.split()
                     lh = float(label[4]) * ih
                     lw = float(label[3]) * iw
@@ -46,9 +45,7 @@ def Kmeans(images_path, labels_path, k = 3, image_type = ".jpg"):
 
 
 if __name__ == '__main__':
-    r = Kmeans(images_path="D:/testProject/TestPyTorch/easyYoLoV7/coco128/images", 
-                labels_path="D:/testProject/TestPyTorch/easyYoLoV7/coco128/labels",
-                k = 3)
+    r = Kmeans(labels_path="D:/testProject/TestPyTorch/easyYoLoV7/coco128/labels", k = 3)
     
     print("r: ", r)
 
