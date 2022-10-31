@@ -11,7 +11,6 @@ def Kmeans(labels_path, k = 3, image_type = ".jpg"):
     wh_points = []
     for root,dirs,files in os.walk(labels_path): 
         for file in files: 
-            print("file: ", file)
             label_path = os.path.join(root,file).replace("\\","/")
 
             image_path = label_path.replace("/labels/", "/images/").replace(".txt", image_type)
@@ -38,7 +37,6 @@ def Kmeans(labels_path, k = 3, image_type = ".jpg"):
                     lw = float(label[3]) * iw
                     wh_points.append([lw, lh])
         
-    print("wh_points: ", wh_points)
     centroid = kmeans(wh_points, k)[0]   
     
     return centroid
