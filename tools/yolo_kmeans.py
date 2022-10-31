@@ -5,7 +5,7 @@ import os
 import cv2
 
 
-def Kmeans(labels_path, k = 3, image_type = ".jpg"):
+def Kmeans(labels_path, k = 3, iters=30, image_type = ".jpg"):
     wh_points = []
     for root,dirs,files in os.walk(labels_path): 
         for file in files: 
@@ -35,7 +35,7 @@ def Kmeans(labels_path, k = 3, image_type = ".jpg"):
                     lw = float(label[3]) * iw
                     wh_points.append([lw, lh])
         
-    centroid = kmeans(wh_points, k)[0]   
+    centroid = kmeans(wh_points, k, iter=iters)[0]   
     
     return centroid
 
