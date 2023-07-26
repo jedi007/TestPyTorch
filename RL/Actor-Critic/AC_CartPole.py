@@ -55,7 +55,7 @@ def select_action(state):
     probs, state_value = model(state)
     m = Categorical(probs)
     action = m.sample()
-    model.save_actions.append(SavedAction(m.log_prob(action), state_value))
+    model.save_actions.append(SavedAction(m.log_prob(action), state_value)) #logits属性是对probs值求的以e为底的对数，log_prob返回该action对应的logits
 
     return action.item()
 
